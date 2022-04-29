@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:drawable="@drawable/ic_splash_foreground">
+    <target android:name="scaleGroup" >
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:startOffset="250"
+                    android:duration="500"
+                    android:propertyName="scaleX"
+                    android:valueType="floatType"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    android:interpolator="@android:interpolator/decelerate_cubic" />
+                <objectAnimator
+                    android:startOffset="250"
+                    android:duration="500"
+                    android:propertyName="scaleY"
+                    android:valueType="floatType"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    android:interpolator="@android:interpolator/decelerate_cubic" />
+            </set>
+        </aapt:attr>
+    </target>
+</animated-vector>

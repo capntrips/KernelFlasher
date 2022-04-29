@@ -1,0 +1,35 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">Kernel Flasher</string>
+    <string name="root_required">Root is required</string>
+    <string name="device">Device</string>
+    <string name="model">Model</string>
+    <string name="build_number">Build Number</string>
+    <string name="kernel_name">Kernel Name</string>
+    <string name="kernel_version">Kernel Version</string>
+    <string name="slot_suffix">Slot Suffix</string>
+    <string name="slot_a">Slot A</string>
+    <string name="slot_b">Slot B</string>
+    <string name="boot_sha1" tools:ignore="Typos">Boot SHA1</string>
+    <string name="vendor_dlkm">Vendor DLKM</string>
+    <string name="exists">Exists</string>
+    <string name="not_found">Not Found</string>
+    <string name="mounted">Mounted</string>
+    <string name="unmounted">Unmounted</string>
+    <string name="view">View</string>
+    <string name="backups">Backups</string>
+    <string name="save_dmesg">Save dmesg</string>
+    <string name="save_logcat">Save logcat</string>
+    <string name="back">Back</string>
+    <string name="backup">Backup</string>
+    <string name="flash">Flash</string>
+    <string name="restore">Restore</string>
+    <string name="check_kernel_version">Check Kernel Version</string>
+    <string name="mount_vendor_dlkm">Mount Vendor DLKM</string>
+    <string name="unmount_vendor_dlkm">Unmount Vendor DLKM</string>
+    <string name="map_vendor_dlkm">Map Vendor DLKM</string>
+    <string name="unmap_vendor_dlkm">Unmap Vendor DLKM</string>
+    <string name="no_backups_found">No Backups Found</string>
+    <string name="delete">Delete</string>
+    <string name="reboot">Reboot</string>
+    <!-- TODO: Make error and success messages string resources -->
+</resources>

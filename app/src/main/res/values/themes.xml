@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.KernelFlasher" parent="Theme.Material3.DayNight.NoActionBar" />
+    <style name="Theme.MainSplashScreen" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ic_splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_animation</item>
+        <item name="windowSplashScreenAnimationDuration">1000</item>
+        <item name="postSplashScreenTheme">@style/Theme.KernelFlasher</item>
+    </style>
+</resources>
