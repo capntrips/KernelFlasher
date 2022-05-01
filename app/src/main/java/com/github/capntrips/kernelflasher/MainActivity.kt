@@ -10,9 +10,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -24,6 +23,7 @@ import com.github.capntrips.kernelflasher.ui.screens.main.MainContent
 import com.github.capntrips.kernelflasher.ui.screens.main.MainViewModel
 import com.github.capntrips.kernelflasher.ui.screens.main.MainViewModelFactory
 import com.github.capntrips.kernelflasher.ui.screens.slot.SlotContent
+import com.github.capntrips.kernelflasher.ui.screens.slot.SlotFlashContent
 import com.github.capntrips.kernelflasher.ui.theme.KernelFlasherTheme
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var mainListener: MainListener
     var isAwaitingResult = false
 
+    @Suppress("SameParameterValue")
     private fun copyAsset(filename: String) {
         val dest = File(filesDir, filename)
         assets.open(filename).use { inputStream ->
@@ -48,6 +49,8 @@ class MainActivity : ComponentActivity() {
         Shell.cmd("chmod +x $dest").exec()
     }
 
+    @Suppress("OPT_IN_MARKER_ON_OVERRIDE_WARNING")
+    @ExperimentalUnitApi
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -88,73 +91,67 @@ class MainActivity : ComponentActivity() {
                         mainListener = MainListener {
                             mainViewModel.refresh(this)
                         }
-                        val slotViewModelA = mainViewModel.toSlotViewModelA()
-                        val slotStateA by slotViewModelA.uiState.collectAsState()
-                        val slotViewModelB = mainViewModel.toSlotViewModelB()
-                        val slotStateB by slotViewModelA.uiState.collectAsState()
-                        val backupsViewModel = mainViewModel.toBackupsViewModel()
-                        val backupsState by backupsViewModel.uiState.collectAsState()
+                        val slotViewModelA = mainViewModel.slotA
+                        val slotViewModelB = mainViewModel.slotB
+                        val backupsViewModel = mainViewModel.backups
                         AnimatedNavHost(navController = navController, startDestination = "main") {
                             composable("main") {
-                                slotStateA.wasFlashed = false
-                                slotStateB.wasFlashed = false
                                 RefreshableScreen(mainViewModel, navController) {
                                     MainContent(mainViewModel, navController)
                                 }
                             }
-                            composable("slotA") {
+                            composable("slot{slotSuffix}") { backStackEntry ->
+                                val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
+                                val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
+                                if (slotSuffix == "_a") {
+                                    slotViewModelA.clearFlash()
+                                } else {
+                                    slotViewModelB.clearFlash()
+                                }
                                 RefreshableScreen(mainViewModel, navController) {
-                                    SlotContent(slotViewModelA, "_a", navController)
+                                    SlotContent(slotViewModel, slotSuffix, navController)
                                 }
                             }
-                            composable("slotA/backups") {
-                                backupsState.clearCurrent()
+                            composable("slot{slotSuffix}/flash") { backStackEntry ->
+                                val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
+                                val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
                                 RefreshableScreen(mainViewModel, navController) {
-                                    SlotBackupsContent(slotViewModelA, backupsViewModel, "_a", navController)
+                                    SlotFlashContent(slotViewModel, navController)
                                 }
                             }
-                            composable("slotA/backups/{backupId}") {backStackEntry ->
-                                backupsState.currentBackup = backStackEntry.arguments?.getString("backupId")
-                                if (backupsState.backups.containsKey(backupsState.currentBackup)) {
+                            composable("slot{slotSuffix}/backups") { backStackEntry ->
+                                val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
+                                val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
+                                backupsViewModel.clearCurrent()
+                                RefreshableScreen(mainViewModel, navController) {
+                                    SlotBackupsContent(slotViewModel, backupsViewModel, slotSuffix, navController)
+                                }
+                            }
+                            composable("slot{slotSuffix}/backups/{backupId}") { backStackEntry ->
+                                val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
+                                val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
+                                backupsViewModel.currentBackup = backStackEntry.arguments?.getString("backupId")
+                                if (backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
                                     RefreshableScreen(mainViewModel, navController) {
-                                        SlotBackupsContent(slotViewModelA, backupsViewModel, "_a", navController)
-                                    }
-                                }
-                            }
-                            composable("slotB") {
-                                RefreshableScreen(mainViewModel, navController) {
-                                    SlotContent(slotViewModelB, "_b", navController)
-                                }
-                            }
-                            composable("slotB/backups") {
-                                backupsState.clearCurrent()
-                                RefreshableScreen(mainViewModel, navController) {
-                                    SlotBackupsContent(slotViewModelB, backupsViewModel, "_b", navController)
-                                }
-                            }
-                            composable("slotB/backups/{backupId}") {backStackEntry ->
-                                backupsState.currentBackup = backStackEntry.arguments?.getString("backupId")
-                                if (backupsState.backups.containsKey(backupsState.currentBackup)) {
-                                    RefreshableScreen(mainViewModel, navController) {
-                                        SlotBackupsContent(slotViewModelB, backupsViewModel, "_b", navController)
+                                        SlotBackupsContent(slotViewModel, backupsViewModel, slotSuffix, navController)
                                     }
                                 }
                             }
                             composable("backups") {
-                                backupsState.clearCurrent()
+                                backupsViewModel.clearCurrent()
                                 RefreshableScreen(mainViewModel, navController) {
                                     BackupsContent(backupsViewModel, navController)
                                 }
                             }
-                            composable("backups/{backupId}") {backStackEntry ->
-                                backupsState.currentBackup = backStackEntry.arguments?.getString("backupId")
-                                if (backupsState.backups.containsKey(backupsState.currentBackup)) {
+                            composable("backups/{backupId}") { backStackEntry ->
+                                backupsViewModel.currentBackup = backStackEntry.arguments?.getString("backupId")
+                                if (backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
                                     RefreshableScreen(mainViewModel, navController) {
                                         BackupsContent(backupsViewModel, navController)
                                     }
                                 }
                             }
-                            composable("error/{error}") {backStackEntry ->
+                            composable("error/{error}") { backStackEntry ->
                                 val error = backStackEntry.arguments?.getString("error")
                                 ErrorScreen(error!!)
                             }

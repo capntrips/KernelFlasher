@@ -4,72 +4,76 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.github.capntrips.kernelflasher.ui.screens.backups.BackupsViewModel
 import com.github.capntrips.kernelflasher.ui.screens.slot.SlotViewModel
-import com.github.capntrips.kernelflasher.ui.state.device.DeviceState
-import com.github.capntrips.kernelflasher.ui.state.device.DeviceStateInterface
 import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-class MainViewModel constructor(context: Context, private val navController: NavController) : ViewModel(), MainViewModelInterface {
+class MainViewModel(
+    context: Context,
+    private val navController: NavController
+) : ViewModel() {
     companion object {
         const val TAG: String = "kernelflasher/MainViewModel"
     }
-    private val _isRefreshing: MutableStateFlow<Boolean> = MutableStateFlow(false)
-    private lateinit var _uiState: MutableStateFlow<DeviceStateInterface>
+    val slotSuffix: String
+
+    val slotA: SlotViewModel
+    val slotB: SlotViewModel
+    val backups: BackupsViewModel
+
+    private val _isRefreshing: MutableState<Boolean> = mutableStateOf(false)
     private var _error: String? = null
 
-    override val isRefreshing: StateFlow<Boolean>
-        get() = _isRefreshing.asStateFlow()
-    override val uiState: StateFlow<DeviceStateInterface>
-        get() = _uiState.asStateFlow()
+    val isRefreshing: Boolean
+        get() = _isRefreshing.value
     val hasError: Boolean
         get() = _error != null
     val error: String
         get() = _error ?: "Unknown Error"
 
     init {
-        try {
-            _uiState = MutableStateFlow(DeviceState(context, _isRefreshing, navController))
-        } catch (e: Exception) {
-            _error = e.message
-        }
+        val bootA = File("/dev/block/by-name/boot_a")
+        val bootB = File("/dev/block/by-name/boot_b")
+
+        slotSuffix = Shell.cmd("getprop ro.boot.slot_suffix").exec().out[0]
+        backups = BackupsViewModel(context, _isRefreshing, navController)
+        slotA = SlotViewModel(context, slotSuffix == "_a", "_a", bootA, _isRefreshing, navController, backups = backups.backups)
+        slotB = SlotViewModel(context, slotSuffix == "_b", "_b", bootB, _isRefreshing, navController, backups = backups.backups)
     }
 
-    override fun refresh(context: Context) {
+    fun refresh(context: Context) {
         launch {
-            try {
-                uiState.value.refresh(context)
-            } catch (e: Exception) {
-                _error = e.message
-            }
+            slotA.refresh(context)
+            slotB.refresh(context)
+            backups.refresh(context)
         }
     }
 
     private fun launch(block: suspend () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
-            _isRefreshing.emit(true)
+            _isRefreshing.value = true
             try {
                 block()
             } catch (e: Exception) {
                 withContext (Dispatchers.Main) {
+                    Log.e(TAG, e.message, e)
                     navController.navigate("error/${e.message}") {
                         popUpTo("main")
                     }
                 }
             }
-            _isRefreshing.emit(false)
+            _isRefreshing.value = false
         }
     }
 
@@ -86,7 +90,7 @@ class MainViewModel constructor(context: Context, private val navController: Nav
     }
 
     @SuppressLint("SdCardPath")
-    override fun saveDmesg(context: Context) {
+    fun saveDmesg(context: Context) {
         launch {
             val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm"))
             val dmesg = File("/sdcard/Download/dmesg--$now")
@@ -100,7 +104,7 @@ class MainViewModel constructor(context: Context, private val navController: Nav
     }
 
     @SuppressLint("SdCardPath")
-    override fun saveLogcat(context: Context) {
+    fun saveLogcat(context: Context) {
         launch {
             val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm"))
             val logcat = File("/sdcard/Download/logcat--$now")
@@ -113,19 +117,9 @@ class MainViewModel constructor(context: Context, private val navController: Nav
         }
     }
 
-    override fun reboot() {
-        Shell.cmd("reboot").exec()
-    }
-
-    fun toSlotViewModelA(): SlotViewModel {
-        return SlotViewModel(_uiState.value.slotA)
-    }
-
-    fun toSlotViewModelB(): SlotViewModel {
-        return SlotViewModel(_uiState.value.slotB)
-    }
-
-    fun toBackupsViewModel(): BackupsViewModel {
-        return BackupsViewModel(_uiState.value.backups)
+    fun reboot() {
+        launch {
+            Shell.cmd("reboot").exec()
+        }
     }
 }

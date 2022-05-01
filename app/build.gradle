@@ -10,8 +10,8 @@ android {
         applicationId "com.github.capntrips.kernelflasher"
         minSdk 31
         targetSdk 32
-        versionCode 1
-        versionName "1.0.0-alpha01"
+        versionCode 2
+        versionName "1.0.0-alpha02"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -49,7 +49,6 @@ dependencies {
     implementation "androidx.activity:activity-compose:$activity_version"
     implementation "androidx.compose.material3:material3:$material3_version"
     implementation "androidx.compose.foundation:foundation:$compose_version"
-    implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
     implementation "androidx.compose.ui:ui:$compose_version"
     implementation "androidx.core:core-ktx:$core_version"
     implementation "androidx.core:core-splashscreen:$splashscreen_version"

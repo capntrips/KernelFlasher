@@ -1,6 +1,5 @@
 package com.github.capntrips.kernelflasher.ui.screens.error
 
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -18,11 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.github.capntrips.kernelflasher.R
-import com.github.capntrips.kernelflasher.ui.theme.KernelFlasherTheme
 import com.github.capntrips.kernelflasher.ui.theme.Orange500
 
 @ExperimentalMaterial3Api
@@ -50,24 +45,5 @@ fun ErrorScreen(message: String) {
                 )
             }
         }
-    }
-}
-
-@ExperimentalMaterial3Api
-@Preview(
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-fun ErrorScreenPreviewDark() {
-    ErrorScreenPreviewLight()
-}
-
-@ExperimentalMaterial3Api
-@Preview(showBackground = true)
-@Composable
-fun ErrorScreenPreviewLight() {
-    KernelFlasherTheme {
-        ErrorScreen(stringResource(R.string.root_required))
     }
 }

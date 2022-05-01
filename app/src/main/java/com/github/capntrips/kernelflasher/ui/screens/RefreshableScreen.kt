@@ -1,6 +1,5 @@
 package com.github.capntrips.kernelflasher.ui.screens
 
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -23,21 +22,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.github.capntrips.kernelflasher.R
-import com.github.capntrips.kernelflasher.ui.screens.main.MainContent
-import com.github.capntrips.kernelflasher.ui.screens.main.MainViewModelInterface
-import com.github.capntrips.kernelflasher.ui.screens.main.MainViewModelPreview
-import com.github.capntrips.kernelflasher.ui.theme.KernelFlasherTheme
+import com.github.capntrips.kernelflasher.ui.screens.main.MainViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -45,7 +37,7 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 @ExperimentalMaterial3Api
 @Composable
 fun RefreshableScreen(
-    viewModel: MainViewModelInterface,
+    viewModel: MainViewModel,
     navController: NavController,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -85,12 +77,11 @@ fun RefreshableScreen(
         }
     ) { paddingValues ->
         val context = LocalContext.current
-        val isRefreshing by viewModel.isRefreshing.collectAsState()
         SwipeRefresh(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize(),
-            state = rememberSwipeRefreshState(isRefreshing),
+            state = rememberSwipeRefreshState(viewModel.isRefreshing),
             onRefresh = { viewModel.refresh(context) },
             indicator = { state, trigger ->
                 SwipeRefreshIndicator(
@@ -109,30 +100,6 @@ fun RefreshableScreen(
                     .verticalScroll(rememberScrollState()),
                 content = content
             )
-        }
-    }
-}
-
-@ExperimentalMaterial3Api
-@Preview(
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Composable
-fun MainScreenPreviewDark() {
-    MainScreenPreviewLight()
-}
-
-@ExperimentalMaterial3Api
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreviewLight() {
-    KernelFlasherTheme {
-        val context = LocalContext.current
-        val navController = rememberNavController()
-        val viewModel = MainViewModelPreview(context, navController)
-        RefreshableScreen(viewModel, navController) {
-            MainContent(viewModel, navController)
         }
     }
 }

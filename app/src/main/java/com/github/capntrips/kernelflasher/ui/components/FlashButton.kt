@@ -18,12 +18,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.capntrips.kernelflasher.MainActivity
 import com.github.capntrips.kernelflasher.R
-import com.github.capntrips.kernelflasher.ui.state.slot.SlotStateInterface
+import com.github.capntrips.kernelflasher.ui.screens.slot.SlotViewModel
 
 @ExperimentalAnimationApi
 @ExperimentalMaterial3Api
 @Composable
-fun FlashButton(slot: SlotStateInterface) {
+fun FlashButton(
+    viewModel: SlotViewModel,
+    callback: () -> Unit
+) {
     val mainActivity = LocalContext.current as MainActivity
     val result = remember { mutableStateOf<Uri?>(null) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
@@ -45,7 +48,7 @@ fun FlashButton(slot: SlotStateInterface) {
     }
     result.value?.let {uri ->
         if (mainActivity.isAwaitingResult) {
-            slot.flash(mainActivity, uri)
+            viewModel.checkZip(mainActivity, uri, callback = callback)
         }
         mainActivity.isAwaitingResult = false
     }

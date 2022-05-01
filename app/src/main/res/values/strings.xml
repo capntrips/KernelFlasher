@@ -31,5 +31,6 @@
     <string name="no_backups_found">No Backups Found</string>
     <string name="delete">Delete</string>
     <string name="reboot">Reboot</string>
+    <string name="save_ak3_log">Save AK3 Log</string>
     <!-- TODO: Make error and success messages string resources -->
 </resources>
