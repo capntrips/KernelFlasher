@@ -15,12 +15,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.github.capntrips.kernelflasher.R
 import com.github.capntrips.kernelflasher.ui.components.FlashButton
 import com.github.capntrips.kernelflasher.ui.components.SlotCard
 
+@ExperimentalUnitApi
 @ExperimentalAnimationApi
 @ExperimentalMaterial3Api
 @Composable
@@ -39,21 +41,24 @@ fun ColumnScope.SlotContent(
     AnimatedVisibility(!viewModel.isRefreshing) {
         Column {
             Spacer(Modifier.height(5.dp))
+            if (viewModel.isActive) {
                 FlashButton(viewModel, callback = {
                     navController.navigate("slot$slotSuffix/flash")
                 })
-                OutlinedButton(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(4.dp),
-                    onClick = {
-                        viewModel.backup(context) {
-                            navController.navigate("slot$slotSuffix/backups")
-                        }
+            }
+            OutlinedButton(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(4.dp),
+                onClick = {
+                    viewModel.backup(context) {
+                        navController.navigate("slot$slotSuffix/backups")
                     }
-                ) {
-                    Text(stringResource(R.string.backup))
                 }
+            ) {
+                Text(stringResource(R.string.backup))
+            }
+            if (viewModel.isActive) {
                 OutlinedButton(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -64,54 +69,55 @@ fun ColumnScope.SlotContent(
                 ) {
                     Text(stringResource(R.string.restore))
                 }
+            }
+            OutlinedButton(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(4.dp),
+                onClick = { if (!viewModel.isRefreshing) viewModel.getKernel(context) }
+            ) {
+                Text(stringResource(R.string.check_kernel_version))
+            }
+            AnimatedVisibility(viewModel.isVendorDlkmMounted) {
                 OutlinedButton(
                     modifier = Modifier
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(4.dp),
-                    onClick = { if (!viewModel.isRefreshing) viewModel.getKernel(context) }
+                    onClick = { if (!viewModel.isRefreshing) viewModel.unmountVendorDlkm(context) }
                 ) {
-                    Text(stringResource(R.string.check_kernel_version))
+                    Text(stringResource(R.string.unmount_vendor_dlkm))
                 }
-                AnimatedVisibility(viewModel.isVendorDlkmMounted) {
+            }
+            AnimatedVisibility(!viewModel.isVendorDlkmMounted && viewModel.hasVendorDlkm) {
+                Column {
                     OutlinedButton(
                         modifier = Modifier
                             .fillMaxWidth(),
                         shape = RoundedCornerShape(4.dp),
-                        onClick = { if (!viewModel.isRefreshing) viewModel.unmountVendorDlkm(context) }
+                        onClick = { viewModel.mountVendorDlkm(context) }
                     ) {
-                        Text(stringResource(R.string.unmount_vendor_dlkm))
+                        Text(stringResource(R.string.mount_vendor_dlkm))
                     }
-                }
-                AnimatedVisibility(!viewModel.isVendorDlkmMounted && viewModel.hasVendorDlkm) {
-                    Column {
-                        OutlinedButton(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            shape = RoundedCornerShape(4.dp),
-                            onClick = { viewModel.mountVendorDlkm(context) }
-                        ) {
-                            Text(stringResource(R.string.mount_vendor_dlkm))
-                        }
-                        OutlinedButton(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            shape = RoundedCornerShape(4.dp),
-                            onClick = { viewModel.unmapVendorDlkm(context) }
-                        ) {
-                            Text(stringResource(R.string.unmap_vendor_dlkm))
-                        }
-                    }
-                }
-                AnimatedVisibility(!viewModel.isVendorDlkmMounted && !viewModel.hasVendorDlkm) {
                     OutlinedButton(
                         modifier = Modifier
                             .fillMaxWidth(),
                         shape = RoundedCornerShape(4.dp),
-                        onClick = { if (!viewModel.isRefreshing) viewModel.mapVendorDlkm(context) }
+                        onClick = { viewModel.unmapVendorDlkm(context) }
                     ) {
-                        Text(stringResource(R.string.map_vendor_dlkm))
+                        Text(stringResource(R.string.unmap_vendor_dlkm))
                     }
                 }
+            }
+            AnimatedVisibility(!viewModel.isVendorDlkmMounted && !viewModel.hasVendorDlkm) {
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(4.dp),
+                    onClick = { if (!viewModel.isRefreshing) viewModel.mapVendorDlkm(context) }
+                ) {
+                    Text(stringResource(R.string.map_vendor_dlkm))
+                }
+            }
         }
     }
 }

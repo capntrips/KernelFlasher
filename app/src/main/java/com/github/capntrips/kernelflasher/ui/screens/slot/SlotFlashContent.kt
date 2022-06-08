@@ -6,8 +6,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -46,10 +48,11 @@ import com.github.capntrips.kernelflasher.ui.components.DataCard
 @Composable
 fun ColumnScope.SlotFlashContent(
     viewModel: SlotViewModel,
+    slotSuffix: String,
     navController: NavController
 ) {
     val context = LocalContext.current
-    if (navController.currentDestination!!.route == "slot{slotSuffix}/flash" && !viewModel.isRefreshing && !viewModel.wasFlashed) {
+    if (navController.currentDestination!!.route!!.endsWith("/flash") && !viewModel.isRefreshing && viewModel.wasFlashSuccess == null) {
         viewModel.flash(context)
     }
     val filteredOutput = viewModel.flashOutput.filter { it.startsWith("ui_print") }
@@ -71,6 +74,7 @@ fun ColumnScope.SlotFlashContent(
         listState.animateScrollToItem(filteredOutput.size)
     }
     DataCard (title = stringResource(R.string.flash))
+    Spacer(Modifier.height(4.dp))
     LazyColumn(
         Modifier
             .weight(1.0f)
@@ -88,7 +92,7 @@ fun ColumnScope.SlotFlashContent(
             )
         }
     }
-    AnimatedVisibility(!viewModel.isRefreshing && viewModel.wasFlashed) {
+    AnimatedVisibility(!viewModel.isRefreshing && viewModel.wasFlashSuccess != null) {
         Column {
             OutlinedButton(
                 modifier = Modifier
@@ -98,13 +102,31 @@ fun ColumnScope.SlotFlashContent(
             ) {
                 Text(stringResource(R.string.save_ak3_log))
             }
-            OutlinedButton(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(4.dp),
-                onClick = { viewModel.reboot() }
-            ) {
-                Text(stringResource(R.string.reboot))
+            if (navController.currentDestination!!.route!! != "slot{slotSuffix}/backups/{backupId}/flash" && viewModel.wasFlashSuccess != false) {
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(4.dp),
+                    onClick = {
+                        viewModel.backupZip(context) {
+                            navController.navigate("slot$slotSuffix/backups") {
+                                popUpTo("slot{slotSuffix}")
+                            }
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.save_ak3_zip_as_backup))
+                }
+            }
+            if (viewModel.wasFlashSuccess != false) {
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(4.dp),
+                    onClick = { viewModel.reboot(context, clear = true) }
+                ) {
+                    Text(stringResource(R.string.reboot))
+                }
             }
         }
     }

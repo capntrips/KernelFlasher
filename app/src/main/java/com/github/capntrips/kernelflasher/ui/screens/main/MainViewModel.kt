@@ -12,6 +12,7 @@ import androidx.navigation.NavController
 import com.github.capntrips.kernelflasher.ui.screens.backups.BackupsViewModel
 import com.github.capntrips.kernelflasher.ui.screens.slot.SlotViewModel
 import com.topjohnwu.superuser.Shell
+import com.topjohnwu.superuser.io.SuFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -24,13 +25,14 @@ class MainViewModel(
     private val navController: NavController
 ) : ViewModel() {
     companion object {
-        const val TAG: String = "kernelflasher/MainViewModel"
+        const val TAG: String = "KernelFlasher/MainViewModel"
     }
     val slotSuffix: String
 
     val slotA: SlotViewModel
     val slotB: SlotViewModel
     val backups: BackupsViewModel
+    val hasRamoops: Boolean
 
     private val _isRefreshing: MutableState<Boolean> = mutableStateOf(false)
     private var _error: String? = null
@@ -50,6 +52,9 @@ class MainViewModel(
         backups = BackupsViewModel(context, _isRefreshing, navController)
         slotA = SlotViewModel(context, slotSuffix == "_a", "_a", bootA, _isRefreshing, navController, backups = backups.backups)
         slotB = SlotViewModel(context, slotSuffix == "_b", "_b", bootB, _isRefreshing, navController, backups = backups.backups)
+
+        val ramoops = SuFile("/sys/fs/pstore/console-ramoops-0")
+        hasRamoops = ramoops.exists()
     }
 
     fun refresh(context: Context) {
@@ -90,10 +95,24 @@ class MainViewModel(
     }
 
     @SuppressLint("SdCardPath")
+    fun saveRamoops(context: Context) {
+        launch {
+            val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm"))
+            val ramoops = File("/sdcard/Download/console-ramoops--$now.log")
+            Shell.cmd("cp /sys/fs/pstore/console-ramoops-0 $ramoops").exec()
+            if (ramoops.exists()) {
+                log(context, "Saved ramoops to $ramoops")
+            } else {
+                log(context, "Failed to save $ramoops", shouldThrow = true)
+            }
+        }
+    }
+
+    @SuppressLint("SdCardPath")
     fun saveDmesg(context: Context) {
         launch {
             val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm"))
-            val dmesg = File("/sdcard/Download/dmesg--$now")
+            val dmesg = File("/sdcard/Download/dmesg--$now.log")
             Shell.cmd("dmesg > $dmesg").exec()
             if (dmesg.exists()) {
                 log(context, "Saved dmesg to $dmesg")
@@ -107,7 +126,7 @@ class MainViewModel(
     fun saveLogcat(context: Context) {
         launch {
             val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm"))
-            val logcat = File("/sdcard/Download/logcat--$now")
+            val logcat = File("/sdcard/Download/logcat--$now.log")
             Shell.cmd("logcat -d > $logcat").exec()
             if (logcat.exists()) {
                 log(context, "Saved logcat to $logcat")

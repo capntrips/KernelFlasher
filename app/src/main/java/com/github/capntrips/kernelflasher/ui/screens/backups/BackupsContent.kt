@@ -33,7 +33,10 @@ fun ColumnScope.BackupsContent(
     if (viewModel.currentBackup != null && viewModel.backups.containsKey(viewModel.currentBackup)) {
         DataCard (viewModel.currentBackup!!) {
             val props = viewModel.backups.getValue(viewModel.currentBackup!!)
-            DataRow(stringResource(R.string.boot_sha1), props.getProperty("sha1").substring(0, 8))
+            DataRow(stringResource(R.string.backup_type), props.getProperty("type", "raw"))
+            if (props.getProperty("type", "raw").equals("raw")) {
+                DataRow(stringResource(R.string.boot_sha1), props.getProperty("sha1").substring(0, 8))
+            }
             DataRow(stringResource(R.string.kernel_version), props.getProperty("kernel"))
         }
         AnimatedVisibility(!viewModel.isRefreshing) {
@@ -52,7 +55,8 @@ fun ColumnScope.BackupsContent(
     } else {
         DataCard(stringResource(R.string.backups))
         if (viewModel.backups.isNotEmpty()) {
-            for ((id, props) in viewModel.backups) {
+            for (id in viewModel.backups.keys.sortedByDescending { it }) {
+                val props = viewModel.backups[id]!!
                 Spacer(Modifier.height(16.dp))
                 DataCard(
                     title = id,
@@ -66,7 +70,9 @@ fun ColumnScope.BackupsContent(
                         }
                     }
                 ) {
-                    DataRow(stringResource(R.string.boot_sha1), props.getProperty("sha1").substring(0, 8))
+                    if (props.getProperty("type", "raw").equals("raw")) {
+                        DataRow(stringResource(R.string.boot_sha1), props.getProperty("sha1").substring(0, 8))
+                    }
                     DataRow(stringResource(R.string.kernel_version), props.getProperty("kernel"))
                 }
             }

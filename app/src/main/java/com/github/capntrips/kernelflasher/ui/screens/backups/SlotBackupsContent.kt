@@ -42,24 +42,45 @@ fun ColumnScope.SlotBackupsContent(
     )
     Spacer(Modifier.height(16.dp))
     if (backupsViewModel.currentBackup != null && backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
+        val props = backupsViewModel.backups.getValue(backupsViewModel.currentBackup!!)
         DataCard (backupsViewModel.currentBackup!!) {
-            val props = backupsViewModel.backups.getValue(backupsViewModel.currentBackup!!)
-            DataRow(stringResource(R.string.boot_sha1), props.getProperty("sha1").substring(0, 8))
+            DataRow(stringResource(R.string.backup_type), props.getProperty("type", "raw"))
+            if (props.getProperty("type", "raw").equals("raw")) {
+                DataRow(stringResource(R.string.boot_sha1), props.getProperty("sha1").substring(0, 8))
+            }
             DataRow(stringResource(R.string.kernel_version), props.getProperty("kernel"))
         }
         AnimatedVisibility(!slotViewModel.isRefreshing) {
             Column {
                 Spacer(Modifier.height(5.dp))
                 if (!backupsViewModel.wasRestored) {
-                    OutlinedButton(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(4.dp),
-                        onClick = {
-                            backupsViewModel.restore(context, slotSuffix)
+                    if (slotViewModel.isActive) {
+                        val backupType = props.getProperty("type", "raw")
+                        if (backupType.equals("raw")) {
+                            OutlinedButton(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                shape = RoundedCornerShape(4.dp),
+                                onClick = {
+                                    backupsViewModel.restore(context, slotSuffix)
+                                }
+                            ) {
+                                Text(stringResource(R.string.restore))
+                            }
+                        } else if (backupType.equals("ak3")) {
+                            OutlinedButton(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                shape = RoundedCornerShape(4.dp),
+                                onClick = {
+                                    slotViewModel.checkZip(context, backupsViewModel.currentBackup!!) {
+                                        navController.navigate("slot$slotSuffix/backups/${backupsViewModel.currentBackup!!}/flash")
+                                    }
+                                }
+                            ) {
+                                Text(stringResource(R.string.flash))
+                            }
                         }
-                    ) {
-                        Text(stringResource(R.string.restore))
                     }
                     OutlinedButton(
                         modifier = Modifier
@@ -83,9 +104,10 @@ fun ColumnScope.SlotBackupsContent(
         }
     } else {
         DataCard(stringResource(R.string.backups))
-        val backups = backupsViewModel.backups.filter { it.value.getValue("sha1").equals(slotViewModel.sha1) }
+        val backups = backupsViewModel.backups.filter { it.value.getProperty("sha1", "").equals(slotViewModel.sha1) || it.value.getProperty("type", "raw").equals("ak3") }
         if (backups.isNotEmpty()) {
-            for ((id, props) in backups) {
+            for (id in backups.keys.sortedByDescending { it }) {
+                val props = backups[id]!!
                 Spacer(Modifier.height(16.dp))
                 DataCard(
                     title = id,

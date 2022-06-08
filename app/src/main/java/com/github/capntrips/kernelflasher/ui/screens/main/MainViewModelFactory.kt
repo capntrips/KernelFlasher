@@ -6,7 +6,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 
 class MainViewModelFactory(private val context: Context, private val navController: NavController) : ViewModelProvider.Factory {
-    override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
             return MainViewModel(context, navController) as T
         }

@@ -69,6 +69,16 @@ fun ColumnScope.MainContent(
             Text(stringResource(R.string.backups))
         }
     }
+    if (viewModel.hasRamoops) {
+        OutlinedButton(
+            modifier = Modifier
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(4.dp),
+            onClick = { viewModel.saveRamoops(context) }
+        ) {
+            Text(stringResource(R.string.save_ramoops))
+        }
+    }
     OutlinedButton(
         modifier = Modifier
             .fillMaxWidth(),

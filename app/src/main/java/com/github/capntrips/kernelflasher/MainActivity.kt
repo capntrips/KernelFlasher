@@ -32,6 +32,7 @@ import com.topjohnwu.superuser.Shell
 import java.io.File
 
 
+@ExperimentalUnitApi
 @ExperimentalMaterial3Api
 @ExperimentalAnimationApi
 class MainActivity : ComponentActivity() {
@@ -50,7 +51,6 @@ class MainActivity : ComponentActivity() {
     }
 
     @Suppress("OPT_IN_MARKER_ON_OVERRIDE_WARNING")
-    @ExperimentalUnitApi
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -103,10 +103,8 @@ class MainActivity : ComponentActivity() {
                             composable("slot{slotSuffix}") { backStackEntry ->
                                 val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
                                 val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
-                                if (slotSuffix == "_a") {
-                                    slotViewModelA.clearFlash()
-                                } else {
-                                    slotViewModelB.clearFlash()
+                                if (slotViewModel.wasFlashSuccess != null && navController.currentDestination!!.route.equals("slot{slotSuffix}")) {
+                                    slotViewModel.clearFlash(this@MainActivity)
                                 }
                                 RefreshableScreen(mainViewModel, navController) {
                                     SlotContent(slotViewModel, slotSuffix, navController)
@@ -116,7 +114,7 @@ class MainActivity : ComponentActivity() {
                                 val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
                                 val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
                                 RefreshableScreen(mainViewModel, navController) {
-                                    SlotFlashContent(slotViewModel, navController)
+                                    SlotFlashContent(slotViewModel, slotSuffix, navController)
                                 }
                             }
                             composable("slot{slotSuffix}/backups") { backStackEntry ->
@@ -134,6 +132,16 @@ class MainActivity : ComponentActivity() {
                                 if (backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
                                     RefreshableScreen(mainViewModel, navController) {
                                         SlotBackupsContent(slotViewModel, backupsViewModel, slotSuffix, navController)
+                                    }
+                                }
+                            }
+                            composable("slot{slotSuffix}/backups/{backupId}/flash") { backStackEntry ->
+                                val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
+                                val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
+                                backupsViewModel.currentBackup = backStackEntry.arguments?.getString("backupId")
+                                if (backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
+                                    RefreshableScreen(mainViewModel, navController) {
+                                        SlotFlashContent(slotViewModel, slotSuffix, navController)
                                     }
                                 }
                             }

@@ -17,6 +17,7 @@
     <string name="unmounted">Unmounted</string>
     <string name="view">View</string>
     <string name="backups">Backups</string>
+    <string name="save_ramoops">Save ramoops</string>
     <string name="save_dmesg">Save dmesg</string>
     <string name="save_logcat">Save logcat</string>
     <string name="back">Back</string>
@@ -32,5 +33,7 @@
     <string name="delete">Delete</string>
     <string name="reboot">Reboot</string>
     <string name="save_ak3_log">Save AK3 Log</string>
+    <string name="save_ak3_zip_as_backup">Save AK3 Zip as Backup</string>
+    <string name="backup_type">Backup Type</string>
     <!-- TODO: Make error and success messages string resources -->
 </resources>

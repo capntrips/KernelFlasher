@@ -23,7 +23,7 @@ class BackupsViewModel(
     private val navController: NavController
 ) : ViewModel() {
     companion object {
-        const val TAG: String = "kernelflasher/BackupsState"
+        const val TAG: String = "KernelFlasher/BackupsState"
     }
 
     var backups: HashMap<String, Properties> = HashMap()
@@ -51,10 +51,7 @@ class BackupsViewModel(
                     val inputStream = FileInputStream(propFile)
                     val props = Properties()
                     props.load(inputStream)
-                    val sha1 = props.getProperty("sha1")
-                    if (sha1.isNotEmpty()) {
-                        backups[child.name] = props
-                    }
+                    backups[child.name] = props
                 }
             }
         }

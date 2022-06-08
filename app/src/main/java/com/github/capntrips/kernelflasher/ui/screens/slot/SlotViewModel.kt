@@ -27,7 +27,7 @@ import java.util.zip.ZipFile
 
 class SlotViewModel(
     context: Context,
-    private val isActive: Boolean,
+    val isActive: Boolean,
     val slotSuffix: String,
     private val boot: File,
     private val _isRefreshing: MutableState<Boolean>,
@@ -36,7 +36,7 @@ class SlotViewModel(
     private val backups: HashMap<String, Properties>? = null
 ) : ViewModel() {
     companion object {
-        const val TAG: String = "kernelflasher/SlotState"
+        const val TAG: String = "KernelFlasher/SlotState"
     }
 
     lateinit var sha1: String
@@ -45,14 +45,14 @@ class SlotViewModel(
     var isVendorDlkmMounted: Boolean = false
     @Suppress("PropertyName")
     private val _flashOutput: SnapshotStateList<String> = mutableStateListOf()
-    val flashOutput: List<String>
-        get() = _flashOutput
-    private val _wasFlashed: MutableState<Boolean> = mutableStateOf(false)
+    private val _wasFlashSuccess: MutableState<Boolean?> = mutableStateOf(null)
     private var wasSlotReset: Boolean = false
     private var isFlashing: Boolean = false
 
-    val wasFlashed: Boolean
-        get() = _wasFlashed.value
+    val flashOutput: List<String>
+        get() = _flashOutput
+    val wasFlashSuccess: Boolean?
+        get() = _wasFlashSuccess.value
     val isRefreshing: Boolean
         get() = _isRefreshing.value
 
@@ -123,17 +123,36 @@ class SlotViewModel(
         }
     }
 
-    fun clearFlash() {
-        _wasFlashed.value = false
+    private fun clearTmp(context: Context) {
+        val zip = File(context.filesDir, "ak3.zip")
+        val akHome = File(context.filesDir, "akhome")
+        if (zip.exists()) {
+            zip.delete()
+        }
+        if (akHome.exists()) {
+            Shell.cmd("rm -r $akHome").exec()
+        }
+    }
+
+    @Suppress("FunctionName")
+    private fun _clearFlash() {
         _flashOutput.clear()
+        _wasFlashSuccess.value = null
+    }
+
+    fun clearFlash(context: Context) {
+        _clearFlash()
+        launch {
+            clearTmp(context)
+        }
     }
 
     @SuppressLint("SdCardPath")
     fun saveLog(context: Context) {
         launch {
             val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm"))
-            val log = SuFile("/sdcard/Download/ak3-log--$now")
-            log.writeText(flashOutput.joinToString("\n"))
+            val log = SuFile("/sdcard/Download/ak3-log--$now.log")
+            log.writeText(flashOutput.filter { !it.matches("""progress [\d.]* [\d.]*""".toRegex()) }.joinToString("\n").replace("""ui_print (.*)\n {6}ui_print""".toRegex(), "$1"))
             if (log.exists()) {
                 log(context, "Saved AK3 log to $log")
             } else {
@@ -142,8 +161,14 @@ class SlotViewModel(
         }
     }
 
-    fun reboot() {
+    fun reboot(context: Context? = null, clear: Boolean = false) {
+        if (clear) {
+            _clearFlash()
+        }
         launch {
+            if (clear) {
+                clearTmp(context!!)
+            }
             Shell.cmd("reboot").exec()
         }
     }
@@ -213,11 +238,11 @@ class SlotViewModel(
 
     private fun backupPartition(context: Context, partition: File, destination: File, isOptional: Boolean = false) {
         if (partition.exists()) {
-            val inputStream = SuFileInputStream.open(partition)
-            val outputStream = FileOutputStream(destination)
-            outputStream.write(inputStream.readBytes())
-            inputStream.close()
-            outputStream.close()
+            SuFileInputStream.open(partition).use { inputStream ->
+                FileOutputStream(destination).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
         } else if (!isOptional) {
             log(context, "Partition ${partition.name} was not found", shouldThrow = true)
         }
@@ -236,9 +261,29 @@ class SlotViewModel(
         backupPartition(context, partition, destinationFile, isOptional)
     }
 
+    private fun createBackupDir(context: Context, now: String) : File {
+        val externalDir = context.getExternalFilesDir(null)
+        val backupsDir = File(externalDir, "backups")
+        if (!backupsDir.exists()) {
+            if (!backupsDir.mkdir()) {
+                log(context, "Failed to create backups dir", shouldThrow = true)
+            }
+        }
+        val backupDir = File(backupsDir, now)
+        if (backupDir.exists()) {
+            log(context, "Backup $now already exists", shouldThrow = true)
+        } else {
+            if (!backupDir.mkdir()) {
+                log(context, "Failed to create backup dir", shouldThrow = true)
+            }
+        }
+        return backupDir
+    }
+
     fun backup(context: Context, callback: () -> Unit) {
         launch {
             val props = Properties()
+            props.setProperty("type", "raw")
             props.setProperty("sha1", sha1)
             if (kernelVersion != null) {
                 props.setProperty("kernel", kernelVersion)
@@ -248,24 +293,8 @@ class SlotViewModel(
                 _getKernel(context)
                 props.setProperty("kernel", kernelVersion!!)
             }
-            val externalDir = context.getExternalFilesDir(null)
-            val backupsDir = File(externalDir, "backups")
-            if (!backupsDir.exists()) {
-                if (!backupsDir.mkdir()) {
-                    log(context, "Failed to create backups dir", shouldThrow = true)
-                }
-            }
             val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm"))
-            val backupDir = File(backupsDir, now)
-            if (backupDir.exists()) {
-                log(context, "Backup $now already exists", shouldThrow = true)
-                return@launch
-            } else {
-                if (!backupDir.mkdir()) {
-                    log(context, "Failed to create backup dir", shouldThrow = true)
-                    return@launch
-                }
-            }
+            val backupDir = createBackupDir(context, now)
             val propFile = File(backupDir, "backup.prop")
             @Suppress("BlockingMethodInNonBlockingContext")
             props.store(propFile.outputStream(), props.getProperty("kernel"))
@@ -280,6 +309,35 @@ class SlotViewModel(
         }
     }
 
+    fun backupZip(context: Context, callback: () -> Unit) {
+        launch {
+            val zip = File(context.filesDir, "ak3.zip")
+            if (zip.exists()) {
+                val props = Properties()
+                props.setProperty("type", "ak3")
+                _getKernel(context)
+                props.setProperty("kernel", kernelVersion!!)
+                val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm"))
+                val backupDir = createBackupDir(context, now)
+                val propFile = File(backupDir, "backup.prop")
+                @Suppress("BlockingMethodInNonBlockingContext")
+                props.store(propFile.outputStream(), props.getProperty("kernel"))
+                val destination = File(backupDir, "ak3.zip")
+                zip.inputStream().use { inputStream ->
+                    destination.outputStream().use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+                backups?.put(now, props)
+                withContext (Dispatchers.Main) {
+                    callback.invoke()
+                }
+            } else {
+                log(context, "AK3 zip is missing", shouldThrow = true)
+            }
+        }
+    }
+
     private fun resetSlot() {
         val activeSlotSuffix = Shell.cmd("getprop ro.boot.slot_suffix").exec().out[0]
         val newSlot = if (activeSlotSuffix == "_a") "_b" else "_a"
@@ -287,34 +345,55 @@ class SlotViewModel(
         wasSlotReset = !wasSlotReset
     }
 
+    @Suppress("BlockingMethodInNonBlockingContext", "FunctionName")
+    suspend fun _checkZip(context: Context, zip: File, callback: () -> Unit) {
+        if (zip.exists()) {
+            try {
+                val zipFile = ZipFile(zip)
+                zipFile.use { z ->
+                    if (z.getEntry("anykernel.sh") == null) {
+                        log(context, "Invalid AK3 zip", shouldThrow = true)
+                    }
+                    withContext (Dispatchers.Main) {
+                        callback.invoke()
+                    }
+                }
+            } catch (e: Exception) {
+                zip.delete()
+                throw e
+            }
+        } else {
+            log(context, "Failed to save zip", shouldThrow = true)
+        }
+    }
+
+    fun checkZip(context: Context, currentBackup: String, callback: () -> Unit) {
+        launch {
+            val externalDir = context.getExternalFilesDir(null)
+            val backupsDir = File(externalDir, "backups")
+            val backupDir = File(backupsDir, currentBackup)
+            val source = File(backupDir, "ak3.zip")
+            val zip = File(context.filesDir, "ak3.zip")
+            source.inputStream().use { inputStream ->
+                zip.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            _checkZip(context, zip, callback)
+        }
+    }
+
     @Suppress("BlockingMethodInNonBlockingContext")
     fun checkZip(context: Context, uri: Uri, callback: () -> Unit) {
         launch {
             val source = context.contentResolver.openInputStream(uri)
-            val zip = File(context.filesDir, "ak.zip")
+            val zip = File(context.filesDir, "ak3.zip")
             source.use { inputStream ->
                 zip.outputStream().use { outputStream ->
                     inputStream?.copyTo(outputStream)
                 }
             }
-            if (zip.exists()) {
-                try {
-                    val zipFile = ZipFile(zip)
-                    zipFile.use { z ->
-                        if (z.getEntry("anykernel.sh") == null) {
-                            log(context, "Invalid AK3 zip", shouldThrow = true)
-                        }
-                        withContext (Dispatchers.Main) {
-                            callback.invoke()
-                        }
-                    }
-                } catch (e: Exception) {
-                    zip.delete()
-                    throw e
-                }
-            } else {
-                log(context, "Failed to save zip", shouldThrow = true)
-            }
+            _checkZip(context, zip, callback)
         }
     }
 
@@ -326,48 +405,42 @@ class SlotViewModel(
                 if (!isActive) {
                     resetSlot()
                 }
-                val zip = File(context.filesDir, "ak.zip")
+                val zip = File(context.filesDir, "ak3.zip")
                 val akHome = File(context.filesDir, "akhome")
                 try {
                     if (zip.exists()) {
                         akHome.mkdir()
+                        _wasFlashSuccess.value = false
                         if (akHome.exists()) {
                             val updateBinary = File(akHome, "update-binary")
                             Shell.cmd("unzip -p $zip META-INF/com/google/android/update-binary > $akHome/update-binary").exec()
                             if (updateBinary.exists()) {
-                                val result = Shell.cmd("AKHOME=$akHome \$SHELL $akHome/update-binary 3 1 $zip").to(flashOutput).exec()
+                                val result = Shell.Builder.create().setFlags(Shell.FLAG_REDIRECT_STDERR) .build().newJob().add("AKHOME=$akHome \$SHELL $akHome/update-binary 3 1 $zip").to(flashOutput).exec()
                                 if (result.isSuccess) {
-                                    _flashOutput.add("ui_print ")
-                                    isFlashing = false
-                                    _wasFlashed.value = true
                                     log(context, "Kernel flashed successfully")
+                                    _wasFlashSuccess.value = true
                                 } else {
-                                    log(context, "Failed to flash zip", shouldThrow = true)
+                                    log(context, "Failed to flash zip", shouldThrow = false)
                                 }
                             } else {
                                 log(context, "Failed to extract update-binary", shouldThrow = true)
                             }
                         } else {
-                            log(context, "Failed to create temporary folder")
+                            log(context, "Failed to create temporary folder", shouldThrow = true)
                         }
                     } else {
-                        log(context, "AK3 zip missing", shouldThrow = true)
+                        log(context, "AK3 zip is missing", shouldThrow = true)
                     }
                 } catch (e: Exception) {
+                    clearFlash(context)
+                    throw e
+                } finally {
+                    _flashOutput.add("ui_print ")
+                    _flashOutput.add("      ui_print")
                     isFlashing = false
                     if (wasSlotReset) {
                         resetSlot()
                     }
-                    if (zip.exists()) {
-                        zip.delete()
-                    }
-                    if (akHome.exists()) {
-                        akHome.deleteRecursively()
-                    }
-                    throw e
-                }
-                if (wasSlotReset) {
-                    resetSlot()
                 }
             }
         } else {
