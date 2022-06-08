@@ -36,6 +36,12 @@ import java.io.File
 @ExperimentalMaterial3Api
 @ExperimentalAnimationApi
 class MainActivity : ComponentActivity() {
+    companion object {
+        init {
+            Shell.setDefaultBuilder(Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER))
+        }
+    }
+
     private lateinit var mainListener: MainListener
     var isAwaitingResult = false
 
@@ -79,7 +85,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             KernelFlasherTheme {
-                Shell.setDefaultBuilder(Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER))
                 if (Shell.getShell().status > Shell.NON_ROOT_SHELL) {
                     Shell.cmd("cd $filesDir").exec()
                     copyAsset("lptools")
