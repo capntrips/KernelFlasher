@@ -42,7 +42,7 @@ class MainViewModel(
     val hasError: Boolean
         get() = _error != null
     val error: String
-        get() = _error ?: "Unknown Error"
+        get() = _error!!
 
     init {
         val bootA = File("/dev/block/by-name/boot_a")
@@ -51,7 +51,13 @@ class MainViewModel(
         slotSuffix = Shell.cmd("getprop ro.boot.slot_suffix").exec().out[0]
         backups = BackupsViewModel(context, _isRefreshing, navController)
         slotA = SlotViewModel(context, slotSuffix == "_a", "_a", bootA, _isRefreshing, navController, backups = backups.backups)
+        if (slotA.hasError) {
+            _error = slotA.error
+        }
         slotB = SlotViewModel(context, slotSuffix == "_b", "_b", bootB, _isRefreshing, navController, backups = backups.backups)
+        if (slotB.hasError) {
+            _error = slotB.error
+        }
 
         val ramoops = SuFile("/sys/fs/pstore/console-ramoops-0")
         hasRamoops = ramoops.exists()

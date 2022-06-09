@@ -167,6 +167,7 @@ class BackupsViewModel(
             restoreLogicalPartition(context, backupDir, "vendor_dlkm", slotSuffix)
             restorePhysicalPartition(context, backupDir, "vendor_boot", slotSuffix)
             restorePhysicalPartition(context, backupDir, "dtbo", slotSuffix)
+            restorePhysicalPartition(context, backupDir, "vbmeta", slotSuffix)
             log(context, "Backup restored successfully")
             wasRestored = true
         }

@@ -39,7 +39,7 @@ class SlotViewModel(
         const val TAG: String = "KernelFlasher/SlotState"
     }
 
-    lateinit var sha1: String
+    var _sha1: String? = null
     var kernelVersion: String? = null
     var hasVendorDlkm: Boolean = false
     var isVendorDlkmMounted: Boolean = false
@@ -48,13 +48,21 @@ class SlotViewModel(
     private val _wasFlashSuccess: MutableState<Boolean?> = mutableStateOf(null)
     private var wasSlotReset: Boolean = false
     private var isFlashing: Boolean = false
+    private var inInit = true
+    private var _error: String? = null
 
+    val sha1: String
+        get() = _sha1!!
     val flashOutput: List<String>
         get() = _flashOutput
     val wasFlashSuccess: Boolean?
         get() = _wasFlashSuccess.value
     val isRefreshing: Boolean
         get() = _isRefreshing.value
+    val hasError: Boolean
+        get() = _error != null
+    val error: String
+        get() = _error!!
 
     init {
         refresh(context)
@@ -66,32 +74,36 @@ class SlotViewModel(
         val ramdisk = File(context.filesDir, "ramdisk.cpio")
 
         val mapperDir = "/dev/block/mapper"
-        val vendorDlkm = SuFile(mapperDir, "vendor_dlkm$slotSuffix")
+        var vendorDlkm = SuFile(mapperDir, "vendor_dlkm$slotSuffix")
         hasVendorDlkm = vendorDlkm.exists()
         if (hasVendorDlkm) {
-            val dmPath = Shell.cmd("readlink -f $vendorDlkm").exec().out[0]
-            var mounts = Shell.cmd("mount | grep $dmPath").exec().out
-            if (mounts.isNotEmpty()) {
-                isVendorDlkmMounted = true
-            } else {
-                mounts = Shell.cmd("mount | grep vendor_dlkm-verity").exec().out
-                isVendorDlkmMounted = mounts.isNotEmpty()
+            isVendorDlkmMounted = isPartitionMounted(vendorDlkm)
+            if (!isVendorDlkmMounted) {
+                vendorDlkm = SuFile(mapperDir, "vendor_dlkm-verity")
+                isVendorDlkmMounted = isPartitionMounted(vendorDlkm)
             }
         } else {
             isVendorDlkmMounted = false
         }
 
-        if (!isImage || ramdisk.exists()) {
-            when (Shell.cmd("/data/adb/magisk/magiskboot cpio ramdisk.cpio test").exec().code) {
-                0 -> sha1 = Shell.cmd("/data/adb/magisk/magiskboot sha1 $boot").exec().out[0]
-                1 -> sha1 = Shell.cmd("/data/adb/magisk/magiskboot cpio ramdisk.cpio sha1").exec().out[0]
-                else -> log(context, "Invalid boot.img", shouldThrow = true)
+        val magiskboot = SuFile("/data/adb/magisk/magiskboot")
+        if (magiskboot.exists()) {
+            if (!isImage || ramdisk.exists()) {
+                when (Shell.cmd("/data/adb/magisk/magiskboot cpio ramdisk.cpio test").exec().code) {
+                    0 -> _sha1 = Shell.cmd("/data/adb/magisk/magiskboot sha1 $boot").exec().out[0]
+                    1 -> _sha1 = Shell.cmd("/data/adb/magisk/magiskboot cpio ramdisk.cpio sha1").exec().out[0]
+                    else -> log(context, "Invalid boot.img", shouldThrow = true)
+                }
+            } else {
+                log(context, "Invalid boot.img", shouldThrow = true)
             }
+            Shell.cmd("/data/adb/magisk/magiskboot cleanup").exec()
         } else {
-            log(context, "Invalid boot.img", shouldThrow = true)
+            log(context, "magiskboot is missing", shouldThrow = true)
         }
+
         kernelVersion = null
-        Shell.cmd("/data/adb/magisk/magiskboot cleanup").exec()
+        inInit = false
     }
 
     private fun launch(block: suspend () -> Unit) {
@@ -119,7 +131,11 @@ class SlotViewModel(
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             }
         } else {
-            throw Exception(message)
+            if (inInit) {
+                _error = message
+            } else {
+                throw Exception(message)
+            }
         }
     }
 
@@ -192,18 +208,34 @@ class SlotViewModel(
         }
     }
 
+    fun isPartitionMounted(partition: File) : Boolean {
+        @Suppress("LiftReturnOrAssignment")
+        if (partition.exists()) {
+            val dmPath = Shell.cmd("readlink -f $partition").exec().out[0]
+            val mounts = Shell.cmd("mount | grep $dmPath").exec().out
+            return mounts.isNotEmpty();
+        } else {
+            return false;
+        }
+    }
+
+    fun unmountPartition(partition: File) {
+        val dmPath = Shell.cmd("readlink -f $partition").exec().out[0]
+        Shell.cmd("umount $dmPath").exec()
+    }
+
     fun unmountVendorDlkm(context: Context) {
         launch {
             val mapperDir = "/dev/block/mapper"
-            val vendorDlkm = SuFile(mapperDir, "vendor_dlkm$slotSuffix")
-            val dmPath = Shell.cmd("readlink -f $vendorDlkm").exec().out[0]
-            var mounts = Shell.cmd("mount | grep $dmPath").exec().out
-            if (mounts.isNotEmpty()) {
-                Shell.cmd("umount $dmPath").exec()
-            } else {
-                mounts = Shell.cmd("mount | grep vendor_dlkm-verity").exec().out
-                if (mounts.isNotEmpty()) {
-                    Shell.cmd("umount /vendor_dlkm-verity").exec()
+            var vendorDlkm = SuFile(mapperDir, "vendor_dlkm$slotSuffix")
+            if (vendorDlkm.exists()) {
+                if (isPartitionMounted(vendorDlkm)) {
+                    unmountPartition(vendorDlkm)
+                } else {
+                    vendorDlkm = SuFile(mapperDir, "vendor_dlkm-verity")
+                    if (isPartitionMounted(vendorDlkm)) {
+                        unmountPartition(vendorDlkm)
+                    }
                 }
             }
             refresh(context)
@@ -223,7 +255,16 @@ class SlotViewModel(
     fun unmapVendorDlkm(context: Context) {
         launch {
             val lptools = File(context.filesDir, "lptools")
-            Shell.cmd("$lptools unmap vendor_dlkm$slotSuffix").exec()
+            val mapperDir = "/dev/block/mapper"
+            val vendorDlkm = SuFile(mapperDir, "vendor_dlkm$slotSuffix")
+            if (vendorDlkm.exists()) {
+                val vendorDlkmVerity = SuFile(mapperDir, "vendor_dlkm-verity")
+                if (vendorDlkmVerity.exists()) {
+                    Shell.cmd("$lptools unmap vendor_dlkm-verity").exec()
+                } else {
+                    Shell.cmd("$lptools unmap vendor_dlkm$slotSuffix").exec()
+                }
+            }
             refresh(context)
         }
     }
@@ -302,6 +343,7 @@ class SlotViewModel(
             backupLogicalPartition(context, "vendor_dlkm", backupDir, true)
             backupPhysicalPartition(context, "vendor_boot", backupDir)
             backupPhysicalPartition(context, "dtbo", backupDir)
+            backupPhysicalPartition(context, "vbmeta", backupDir)
             backups?.put(now, props)
             withContext (Dispatchers.Main) {
                 callback.invoke()
