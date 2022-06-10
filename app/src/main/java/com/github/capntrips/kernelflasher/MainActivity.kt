@@ -58,14 +58,14 @@ class MainActivity : ComponentActivity() {
 
     @Suppress("OPT_IN_MARKER_ON_OVERRIDE_WARNING")
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         splashScreen.setOnExitAnimationListener { splashScreenView ->
             val scale = ObjectAnimator.ofPropertyValuesHolder(
-                splashScreenView,
+                splashScreenView.view,
                 PropertyValuesHolder.ofFloat(
                     View.SCALE_X,
                     1f,

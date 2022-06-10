@@ -10,8 +10,8 @@ android {
         applicationId "com.github.capntrips.kernelflasher"
         minSdk 30
         targetSdk 32
-        versionCode 5
-        versionName "1.0.0-alpha05"
+        versionCode 6
+        versionName "1.0.0-alpha06"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
