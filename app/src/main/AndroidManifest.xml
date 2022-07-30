@@ -10,11 +10,11 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.KernelFlasher" >
+        android:theme="@style/Theme.KernelFlasher">
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.MainSplashScreen" >
+            android:theme="@style/Theme.KernelFlasher">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

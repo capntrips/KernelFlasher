@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 
 @Composable
 fun KernelFlasherTheme(
@@ -33,8 +33,10 @@ fun KernelFlasherTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            (view.context as Activity).window.statusBarColor = Color.Transparent.toArgb()
-            ViewCompat.getWindowInsetsController(view)?.isAppearanceLightStatusBars = !darkTheme
+            // TODO: fix this
+            val window = (view.context as Activity).window
+            window.statusBarColor = Color.Transparent.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 

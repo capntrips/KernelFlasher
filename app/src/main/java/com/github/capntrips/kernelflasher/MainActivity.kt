@@ -7,7 +7,6 @@ import android.view.View
 import android.view.animation.AccelerateInterpolator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.res.stringResource
@@ -15,13 +14,14 @@ import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.capntrips.kernelflasher.ui.screens.RefreshableScreen
 import com.github.capntrips.kernelflasher.ui.screens.backups.BackupsContent
 import com.github.capntrips.kernelflasher.ui.screens.backups.SlotBackupsContent
 import com.github.capntrips.kernelflasher.ui.screens.error.ErrorScreen
 import com.github.capntrips.kernelflasher.ui.screens.main.MainContent
 import com.github.capntrips.kernelflasher.ui.screens.main.MainViewModel
-import com.github.capntrips.kernelflasher.ui.screens.main.MainViewModelFactory
 import com.github.capntrips.kernelflasher.ui.screens.slot.SlotContent
 import com.github.capntrips.kernelflasher.ui.screens.slot.SlotFlashContent
 import com.github.capntrips.kernelflasher.ui.theme.KernelFlasherTheme
@@ -58,30 +58,31 @@ class MainActivity : ComponentActivity() {
 
     @Suppress("OPT_IN_MARKER_ON_OVERRIDE_WARNING")
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
+        // TODO: restore splash screen when it not longer conflicts with status bar
+        // val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        splashScreen.setOnExitAnimationListener { splashScreenView ->
-            val scale = ObjectAnimator.ofPropertyValuesHolder(
-                splashScreenView.view,
-                PropertyValuesHolder.ofFloat(
-                    View.SCALE_X,
-                    1f,
-                    0f
-                ),
-                PropertyValuesHolder.ofFloat(
-                    View.SCALE_Y,
-                    1f,
-                    0f
-                )
-            )
-            scale.interpolator = AccelerateInterpolator()
-            scale.duration = 250L
-            scale.doOnEnd { splashScreenView.remove() }
-            scale.start()
-        }
+        // splashScreen.setOnExitAnimationListener { splashScreenView ->
+        //     val scale = ObjectAnimator.ofPropertyValuesHolder(
+        //         splashScreenView.view,
+        //         PropertyValuesHolder.ofFloat(
+        //             View.SCALE_X,
+        //             1f,
+        //             0f
+        //         ),
+        //         PropertyValuesHolder.ofFloat(
+        //             View.SCALE_Y,
+        //             1f,
+        //             0f
+        //         )
+        //     )
+        //     scale.interpolator = AccelerateInterpolator()
+        //     scale.duration = 250L
+        //     scale.doOnEnd { splashScreenView.remove() }
+        //     scale.start()
+        // }
 
         setContent {
             KernelFlasherTheme {
@@ -91,7 +92,10 @@ class MainActivity : ComponentActivity() {
 
 
                     val navController = rememberAnimatedNavController()
-                    val mainViewModel: MainViewModel by viewModels { MainViewModelFactory(this, navController) }
+                    val mainViewModel = viewModel {
+                        val application = checkNotNull(get(ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY))
+                        MainViewModel(application, navController)
+                    }
                     if (!mainViewModel.hasError) {
                         mainListener = MainListener {
                             mainViewModel.refresh(this)

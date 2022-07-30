@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -41,16 +42,14 @@ fun RefreshableScreen(
     navController: NavController,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val statusBar = WindowInsets.statusBars.only(WindowInsetsSides.Top).asPaddingValues()
+    val navigationBars = WindowInsets.navigationBars.asPaddingValues()
     Scaffold(
         topBar = {
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .padding(
-                        WindowInsets.statusBars
-                            .only(WindowInsetsSides.Top)
-                            .asPaddingValues()
-                    )) {
+                    .padding(statusBar)) {
                 if (navController.previousBackStackEntry != null) {
                     IconButton(
                         onClick = { navController.popBackStack() },
@@ -95,7 +94,7 @@ fun RefreshableScreen(
         ) {
             Column(
                 modifier = Modifier
-                    .padding(16.dp, 0.dp, 16.dp, 16.dp)
+                    .padding(16.dp, 0.dp, 16.dp, 16.dp + navigationBars.calculateBottomPadding())
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState()),
                 content = content

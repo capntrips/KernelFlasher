@@ -10,10 +10,9 @@ android {
         applicationId "com.github.capntrips.kernelflasher"
         minSdk 30
         targetSdk 32
-        versionCode 6
-        versionName "1.0.0-alpha06"
+        versionCode 7
+        versionName "1.0.0-alpha07"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary true
         }
@@ -35,7 +34,7 @@ android {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion compose_version
+        kotlinCompilerExtensionVersion compiler_version
     }
     packagingOptions {
         resources {
