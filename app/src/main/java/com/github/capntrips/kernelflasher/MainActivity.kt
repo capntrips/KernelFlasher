@@ -58,31 +58,30 @@ class MainActivity : ComponentActivity() {
 
     @Suppress("OPT_IN_MARKER_ON_OVERRIDE_WARNING")
     override fun onCreate(savedInstanceState: Bundle?) {
-        // TODO: restore splash screen when it not longer conflicts with status bar
-        // val splashScreen = installSplashScreen()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // splashScreen.setOnExitAnimationListener { splashScreenView ->
-        //     val scale = ObjectAnimator.ofPropertyValuesHolder(
-        //         splashScreenView.view,
-        //         PropertyValuesHolder.ofFloat(
-        //             View.SCALE_X,
-        //             1f,
-        //             0f
-        //         ),
-        //         PropertyValuesHolder.ofFloat(
-        //             View.SCALE_Y,
-        //             1f,
-        //             0f
-        //         )
-        //     )
-        //     scale.interpolator = AccelerateInterpolator()
-        //     scale.duration = 250L
-        //     scale.doOnEnd { splashScreenView.remove() }
-        //     scale.start()
-        // }
+        splashScreen.setOnExitAnimationListener { splashScreenView ->
+            val scale = ObjectAnimator.ofPropertyValuesHolder(
+                splashScreenView.view,
+                PropertyValuesHolder.ofFloat(
+                    View.SCALE_X,
+                    1f,
+                    0f
+                ),
+                PropertyValuesHolder.ofFloat(
+                    View.SCALE_Y,
+                    1f,
+                    0f
+                )
+            )
+            scale.interpolator = AccelerateInterpolator()
+            scale.duration = 250L
+            scale.doOnEnd { splashScreenView.remove() }
+            scale.start()
+        }
 
         setContent {
             KernelFlasherTheme {

@@ -7,7 +7,7 @@
         <aapt:attr name="android:animation">
             <set>
                 <objectAnimator
-                    android:startOffset="250"
+                    android:startOffset="0"
                     android:duration="500"
                     android:propertyName="scaleX"
                     android:valueType="floatType"
@@ -15,7 +15,7 @@
                     android:valueTo="1"
                     android:interpolator="@android:interpolator/decelerate_cubic" />
                 <objectAnimator
-                    android:startOffset="250"
+                    android:startOffset="0"
                     android:duration="500"
                     android:propertyName="scaleY"
                     android:valueType="floatType"
