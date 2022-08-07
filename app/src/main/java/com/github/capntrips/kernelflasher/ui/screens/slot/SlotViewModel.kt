@@ -42,6 +42,7 @@ class SlotViewModel(
     var _sha1: String? = null
     var kernelVersion: String? = null
     var hasVendorDlkm: Boolean = false
+    var isVendorDlkmMapped: Boolean = false
     var isVendorDlkmMounted: Boolean = false
     @Suppress("PropertyName")
     private val _flashOutput: SnapshotStateList<String> = mutableStateListOf()
@@ -75,15 +76,18 @@ class SlotViewModel(
 
         val mapperDir = "/dev/block/mapper"
         var vendorDlkm = SuFile(mapperDir, "vendor_dlkm$slotSuffix")
-        hasVendorDlkm = vendorDlkm.exists()
+        hasVendorDlkm = vendorDlkmAvb(context) != ""
         if (hasVendorDlkm) {
-            isVendorDlkmMounted = isPartitionMounted(vendorDlkm)
-            if (!isVendorDlkmMounted) {
-                vendorDlkm = SuFile(mapperDir, "vendor_dlkm-verity")
+            isVendorDlkmMapped = vendorDlkm.exists()
+            if (isVendorDlkmMapped) {
                 isVendorDlkmMounted = isPartitionMounted(vendorDlkm)
+                if (!isVendorDlkmMounted) {
+                    vendorDlkm = SuFile(mapperDir, "vendor_dlkm-verity")
+                    isVendorDlkmMounted = isPartitionMounted(vendorDlkm)
+                }
+            } else {
+                isVendorDlkmMounted = false
             }
-        } else {
-            isVendorDlkmMounted = false
         }
 
         val magiskboot = SuFile("/data/adb/magisk/magiskboot")
@@ -219,42 +223,31 @@ class SlotViewModel(
         }
     }
 
-    fun unmountPartition(partition: File) {
-        val dmPath = Shell.cmd("readlink -f $partition").exec().out[0]
-        Shell.cmd("umount $dmPath").exec()
+    fun vendorDlkmAvb(context: Context): String {
+        val httools = File(context.filesDir, "httools_static")
+        val result = Shell.cmd("$httools avb vendor_dlkm").exec().out
+        return if (result.isNotEmpty()) result[0] else ""
     }
 
     fun unmountVendorDlkm(context: Context) {
         launch {
-            val mapperDir = "/dev/block/mapper"
-            var vendorDlkm = SuFile(mapperDir, "vendor_dlkm$slotSuffix")
-            if (vendorDlkm.exists()) {
-                if (isPartitionMounted(vendorDlkm)) {
-                    unmountPartition(vendorDlkm)
-                } else {
-                    vendorDlkm = SuFile(mapperDir, "vendor_dlkm-verity")
-                    if (isPartitionMounted(vendorDlkm)) {
-                        unmountPartition(vendorDlkm)
-                    }
-                }
-            }
+            val httools = File(context.filesDir, "httools_static")
+            Shell.cmd("$httools umount vendor_dlkm").exec()
             refresh(context)
         }
     }
 
     fun mountVendorDlkm(context: Context) {
         launch {
-            val mapperDir = "/dev/block/mapper"
-            val vendorDlkm = SuFile(mapperDir, "vendor_dlkm$slotSuffix")
-            val dmPath = Shell.cmd("readlink -f $vendorDlkm").exec().out[0]
-            Shell.cmd("mount -t ext4 -o ro,barrier=1 $dmPath /vendor_dlkm").exec()
+            val httools = File(context.filesDir, "httools_static")
+            Shell.cmd("$httools mount vendor_dlkm").exec()
             refresh(context)
         }
     }
 
     fun unmapVendorDlkm(context: Context) {
         launch {
-            val lptools = File(context.filesDir, "lptools")
+            val lptools = File(context.filesDir, "lptools_static")
             val mapperDir = "/dev/block/mapper"
             val vendorDlkm = SuFile(mapperDir, "vendor_dlkm$slotSuffix")
             if (vendorDlkm.exists()) {
@@ -271,7 +264,7 @@ class SlotViewModel(
 
     fun mapVendorDlkm(context: Context) {
         launch {
-            val lptools = File(context.filesDir, "lptools")
+            val lptools = File(context.filesDir, "lptools_static")
             Shell.cmd("$lptools map vendor_dlkm$slotSuffix").exec()
             refresh(context)
         }
@@ -340,10 +333,12 @@ class SlotViewModel(
             @Suppress("BlockingMethodInNonBlockingContext")
             props.store(propFile.outputStream(), props.getProperty("kernel"))
             backupPhysicalPartition(context, "boot", backupDir)
-            backupLogicalPartition(context, "vendor_dlkm", backupDir, true)
-            backupPhysicalPartition(context, "vendor_boot", backupDir)
-            backupPhysicalPartition(context, "dtbo", backupDir)
             backupPhysicalPartition(context, "vbmeta", backupDir)
+            backupLogicalPartition(context, "vendor_dlkm", backupDir, true)
+            backupPhysicalPartition(context, "vendor_boot", backupDir, true)
+            backupPhysicalPartition(context, "dtbo", backupDir, true)
+            backupPhysicalPartition(context, "init_boot", backupDir, true)
+            backupPhysicalPartition(context, "recovery", backupDir, true)
             backups?.put(now, props)
             withContext (Dispatchers.Main) {
                 callback.invoke()

@@ -123,7 +123,7 @@ class BackupsViewModel(
         val sourceFile = File(source, "$partitionName.img")
         if (sourceFile.exists()) {
             val sourceFileSize = Shell.cmd("wc -c < $sourceFile").exec().out[0].toUInt()
-            val lptools = File(context.filesDir, "lptools")
+            val lptools = File(context.filesDir, "lptools_static")
             Shell.cmd("$lptools remove ${partitionName}_kf").exec()
             if (Shell.cmd("$lptools create ${partitionName}_kf $sourceFileSize").exec().isSuccess) {
                 if (Shell.cmd("$lptools unmap ${partitionName}_kf").exec().isSuccess) {
@@ -164,10 +164,12 @@ class BackupsViewModel(
                 return@launch
             }
             restorePhysicalPartition(context, backupDir, "boot", slotSuffix)
+            restorePhysicalPartition(context, backupDir, "vbmeta", slotSuffix)
             restoreLogicalPartition(context, backupDir, "vendor_dlkm", slotSuffix)
             restorePhysicalPartition(context, backupDir, "vendor_boot", slotSuffix)
             restorePhysicalPartition(context, backupDir, "dtbo", slotSuffix)
-            restorePhysicalPartition(context, backupDir, "vbmeta", slotSuffix)
+            restorePhysicalPartition(context, backupDir, "init_boot", slotSuffix)
+            restorePhysicalPartition(context, backupDir, "recovery", slotSuffix)
             log(context, "Backup restored successfully")
             wasRestored = true
         }

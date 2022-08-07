@@ -87,7 +87,8 @@ class MainActivity : ComponentActivity() {
             KernelFlasherTheme {
                 if (Shell.getShell().status > Shell.NON_ROOT_SHELL) {
                     Shell.cmd("cd $filesDir").exec()
-                    copyAsset("lptools")
+                    copyAsset("lptools_static")
+                    copyAsset("httools_static")
 
 
                     val navController = rememberAnimatedNavController()

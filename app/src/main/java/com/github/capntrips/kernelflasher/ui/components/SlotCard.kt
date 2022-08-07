@@ -45,17 +45,19 @@ fun SlotCard(
                 value = if (viewModel.kernelVersion != null) viewModel.kernelVersion!! else ""
             )
         }
-        var vendorDlkmValue = stringResource(R.string.not_found)
         if (viewModel.hasVendorDlkm) {
-            vendorDlkmValue = if (viewModel.isVendorDlkmMounted) {
-                String.format("%s, %s", stringResource(R.string.exists), stringResource(R.string.mounted))
-            } else {
-                String.format("%s, %s", stringResource(R.string.exists), stringResource(R.string.unmounted))
+            var vendorDlkmValue = stringResource(R.string.not_found)
+            if (viewModel.isVendorDlkmMapped) {
+                vendorDlkmValue = if (viewModel.isVendorDlkmMounted) {
+                    String.format("%s, %s", stringResource(R.string.exists), stringResource(R.string.mounted))
+                } else {
+                    String.format("%s, %s", stringResource(R.string.exists), stringResource(R.string.unmounted))
+                }
             }
+            DataRow(
+                label = stringResource(R.string.vendor_dlkm),
+                value = vendorDlkmValue
+            )
         }
-        DataRow(
-            label = stringResource(R.string.vendor_dlkm),
-            value = vendorDlkmValue
-        )
     }
 }
