@@ -1,5 +1,8 @@
 package com.github.capntrips.kernelflasher.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -40,6 +43,7 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 fun RefreshableScreen(
     viewModel: MainViewModel,
     navController: NavController,
+    swipeEnabled: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val statusBar = WindowInsets.statusBars.only(WindowInsetsSides.Top).asPaddingValues()
@@ -51,15 +55,21 @@ fun RefreshableScreen(
                     .fillMaxWidth()
                     .padding(statusBar)) {
                 if (navController.previousBackStackEntry != null) {
-                    IconButton(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.padding(16.dp, 8.dp, 0.dp, 8.dp)
+                    AnimatedVisibility(
+                        !viewModel.isRefreshing,
+                        enter = fadeIn(),
+                        exit = fadeOut()
                     ) {
-                        Icon(
-                            Icons.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+                        IconButton(
+                            onClick = { navController.popBackStack() },
+                            modifier = Modifier.padding(16.dp, 8.dp, 0.dp, 8.dp)
+                        ) {
+                            Icon(
+                                Icons.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
                 Box(
@@ -81,6 +91,7 @@ fun RefreshableScreen(
                 .padding(paddingValues)
                 .fillMaxSize(),
             state = rememberSwipeRefreshState(viewModel.isRefreshing),
+            swipeEnabled = swipeEnabled,
             onRefresh = { viewModel.refresh(context) },
             indicator = { state, trigger ->
                 SwipeRefreshIndicator(

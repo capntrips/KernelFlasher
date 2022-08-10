@@ -95,12 +95,14 @@ fun ColumnScope.MainContent(
     ) {
         Text(stringResource(R.string.save_logcat))
     }
-    OutlinedButton(
-        modifier = Modifier
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(4.dp),
-        onClick = { viewModel.reboot() }
-    ) {
-        Text(stringResource(R.string.reboot))
+    AnimatedVisibility(!viewModel.isRefreshing) {
+        OutlinedButton(
+            modifier = Modifier
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(4.dp),
+            onClick = { navController.navigate("reboot") }
+        ) {
+            Text(stringResource(R.string.reboot))
+        }
     }
 }

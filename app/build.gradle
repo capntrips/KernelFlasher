@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
 android {
@@ -10,8 +11,8 @@ android {
         applicationId "com.github.capntrips.kernelflasher"
         minSdk 30
         targetSdk 32
-        versionCode 8
-        versionName "1.0.0-alpha08"
+        versionCode 9
+        versionName "1.0.0-alpha09"
 
         vectorDrawables {
             useSupportLibrary true
@@ -55,11 +56,14 @@ dependencies {
     implementation "androidx.navigation:navigation-compose:$nav_version"
     implementation "com.github.topjohnwu.libsu:core:$libsu_version"
     implementation "com.github.topjohnwu.libsu:io:$libsu_version"
+    implementation "com.github.topjohnwu.libsu:nio:$libsu_version"
+    implementation "com.github.topjohnwu.libsu:service:$libsu_version"
     implementation "com.google.accompanist:accompanist-navigation-animation:$accompanist_version"
     implementation "com.google.accompanist:accompanist-swiperefresh:$accompanist_version"
     implementation "com.google.android.material:material:$material_version"
     implementation "androidx.appcompat:appcompat:$appcompat_version"
     implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
 }

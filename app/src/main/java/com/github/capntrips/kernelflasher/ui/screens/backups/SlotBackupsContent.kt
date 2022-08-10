@@ -42,21 +42,20 @@ fun ColumnScope.SlotBackupsContent(
     )
     Spacer(Modifier.height(16.dp))
     if (backupsViewModel.currentBackup != null && backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
-        val props = backupsViewModel.backups.getValue(backupsViewModel.currentBackup!!)
+        val currentBackup = backupsViewModel.backups.getValue(backupsViewModel.currentBackup!!)
         DataCard (backupsViewModel.currentBackup!!) {
-            DataRow(stringResource(R.string.backup_type), props.getProperty("type", "raw"))
-            if (props.getProperty("type", "raw").equals("raw")) {
-                DataRow(stringResource(R.string.boot_sha1), props.getProperty("sha1").substring(0, 8))
+            DataRow(stringResource(R.string.backup_type), currentBackup.type)
+            if (currentBackup.type == "raw") {
+                DataRow(stringResource(R.string.boot_sha1), currentBackup.bootSha1!!.substring(0, 8))
             }
-            DataRow(stringResource(R.string.kernel_version), props.getProperty("kernel"))
+            DataRow(stringResource(R.string.kernel_version), currentBackup.kernelVersion)
         }
         AnimatedVisibility(!slotViewModel.isRefreshing) {
             Column {
                 Spacer(Modifier.height(5.dp))
                 if (!backupsViewModel.wasRestored) {
                     if (slotViewModel.isActive) {
-                        val backupType = props.getProperty("type", "raw")
-                        if (backupType.equals("raw")) {
+                        if (currentBackup.type == "raw") {
                             OutlinedButton(
                                 modifier = Modifier
                                     .fillMaxWidth(),
@@ -67,13 +66,13 @@ fun ColumnScope.SlotBackupsContent(
                             ) {
                                 Text(stringResource(R.string.restore))
                             }
-                        } else if (backupType.equals("ak3")) {
+                        } else if (currentBackup.type == "ak3") {
                             OutlinedButton(
                                 modifier = Modifier
                                     .fillMaxWidth(),
                                 shape = RoundedCornerShape(4.dp),
                                 onClick = {
-                                    slotViewModel.checkZip(context, backupsViewModel.currentBackup!!) {
+                                    slotViewModel.checkZip(context, backupsViewModel.currentBackup!!, currentBackup.filename!!) {
                                         navController.navigate("slot$slotSuffix/backups/${backupsViewModel.currentBackup!!}/flash")
                                     }
                                 }
@@ -95,7 +94,7 @@ fun ColumnScope.SlotBackupsContent(
                         modifier = Modifier
                             .fillMaxWidth(),
                         shape = RoundedCornerShape(4.dp),
-                        onClick = { backupsViewModel.reboot() }
+                        onClick = { navController.navigate("reboot") }
                     ) {
                         Text(stringResource(R.string.reboot))
                     }
@@ -104,10 +103,9 @@ fun ColumnScope.SlotBackupsContent(
         }
     } else {
         DataCard(stringResource(R.string.backups))
-        val backups = backupsViewModel.backups.filter { it.value.getProperty("sha1", "").equals(slotViewModel.sha1) || it.value.getProperty("type", "raw").equals("ak3") }
+        val backups = backupsViewModel.backups.filter { it.value.bootSha1.equals(slotViewModel.sha1) || it.value.type == "ak3" }
         if (backups.isNotEmpty()) {
             for (id in backups.keys.sortedByDescending { it }) {
-                val props = backups[id]!!
                 Spacer(Modifier.height(16.dp))
                 DataCard(
                     title = id,
@@ -119,7 +117,7 @@ fun ColumnScope.SlotBackupsContent(
                         }
                     }
                 ) {
-                    DataRow(stringResource(R.string.kernel_version), props.getProperty("kernel"))
+                    DataRow(stringResource(R.string.kernel_version), backups[id]!!.kernelVersion)
                 }
             }
         } else {

@@ -1,5 +1,6 @@
 package com.github.capntrips.kernelflasher.ui.screens.slot
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -102,7 +103,7 @@ fun ColumnScope.SlotFlashContent(
             ) {
                 Text(stringResource(R.string.save_ak3_log))
             }
-            if (navController.currentDestination!!.route!! != "slot{slotSuffix}/backups/{backupId}/flash" && viewModel.wasFlashSuccess != false) {
+            AnimatedVisibility(navController.currentDestination!!.route!! != "slot{slotSuffix}/backups/{backupId}/flash" && navController.previousBackStackEntry!!.destination.route!! != "slot{slotSuffix}/backups/{backupId}/flash" && viewModel.wasFlashSuccess != false) {
                 OutlinedButton(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -123,7 +124,7 @@ fun ColumnScope.SlotFlashContent(
                     modifier = Modifier
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(4.dp),
-                    onClick = { viewModel.reboot(context, clear = true) }
+                    onClick = { navController.navigate("reboot") }
                 ) {
                     Text(stringResource(R.string.reboot))
                 }

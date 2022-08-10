@@ -2,10 +2,17 @@ package com.github.capntrips.kernelflasher
 
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.IBinder
+import android.util.Log
 import android.view.View
+import android.view.ViewTreeObserver
 import android.view.animation.AccelerateInterpolator
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,6 +29,8 @@ import com.github.capntrips.kernelflasher.ui.screens.backups.SlotBackupsContent
 import com.github.capntrips.kernelflasher.ui.screens.error.ErrorScreen
 import com.github.capntrips.kernelflasher.ui.screens.main.MainContent
 import com.github.capntrips.kernelflasher.ui.screens.main.MainViewModel
+import com.github.capntrips.kernelflasher.ui.screens.reboot.RebootContent
+import com.github.capntrips.kernelflasher.ui.screens.reboot.RebootViewModel
 import com.github.capntrips.kernelflasher.ui.screens.slot.SlotContent
 import com.github.capntrips.kernelflasher.ui.screens.slot.SlotFlashContent
 import com.github.capntrips.kernelflasher.ui.theme.KernelFlasherTheme
@@ -29,6 +38,8 @@ import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.topjohnwu.superuser.Shell
+import com.topjohnwu.superuser.ipc.RootService
+import com.topjohnwu.superuser.nio.FileSystemManager
 import java.io.File
 
 
@@ -42,10 +53,30 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private var rootServiceConnected: Boolean = false
+    private var viewModel: MainViewModel? = null
     private lateinit var mainListener: MainListener
     var isAwaitingResult = false
 
-    @Suppress("SameParameterValue")
+    inner class AidlConnection : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            if (!rootServiceConnected) {
+                val ipc: IFilesystemService = IFilesystemService.Stub.asInterface(service)
+                val binder: IBinder = ipc.fileSystemService
+                onAidlConnected(FileSystemManager.getRemote(binder))
+                rootServiceConnected = true
+            }
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            setContent {
+                KernelFlasherTheme {
+                    ErrorScreen(stringResource(R.string.root_service_disconnected))
+                }
+            }
+        }
+    }
+
     private fun copyAsset(filename: String) {
         val dest = File(filesDir, filename)
         assets.open(filename).use { inputStream ->
@@ -56,12 +87,10 @@ class MainActivity : ComponentActivity() {
         Shell.cmd("chmod +x $dest").exec()
     }
 
-    @Suppress("OPT_IN_MARKER_ON_OVERRIDE_WARNING")
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
-
 
         splashScreen.setOnExitAnimationListener { splashScreenView ->
             val scale = ObjectAnimator.ofPropertyValuesHolder(
@@ -83,101 +112,140 @@ class MainActivity : ComponentActivity() {
             scale.start()
         }
 
-        setContent {
-            KernelFlasherTheme {
-                if (Shell.getShell().status > Shell.NON_ROOT_SHELL) {
-                    Shell.cmd("cd $filesDir").exec()
-                    copyAsset("lptools_static")
-                    copyAsset("httools_static")
-
-
-                    val navController = rememberAnimatedNavController()
-                    val mainViewModel = viewModel {
-                        val application = checkNotNull(get(ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY))
-                        MainViewModel(application, navController)
+        val content: View = findViewById(android.R.id.content)
+        content.viewTreeObserver.addOnPreDrawListener(
+            object : ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    return if (viewModel?.isRefreshing == false || Shell.isAppGrantedRoot() == false) {
+                        content.viewTreeObserver.removeOnPreDrawListener(this)
+                        true
+                    } else {
+                        false
                     }
-                    if (!mainViewModel.hasError) {
-                        mainListener = MainListener {
-                            mainViewModel.refresh(this)
+                }
+            }
+        )
+
+        Shell.getShell()
+        if (Shell.isAppGrantedRoot()!!) {
+            val intent = Intent(this, FilesystemService::class.java)
+            RootService.bind(intent, AidlConnection())
+        } else {
+            setContent {
+                KernelFlasherTheme {
+                    ErrorScreen(stringResource(R.string.root_required))
+                }
+            }
+        }
+    }
+
+    fun onAidlConnected(fileSystemManager: FileSystemManager) {
+        try {
+            Shell.cmd("cd $filesDir").exec()
+            copyAsset("lptools_static")
+            copyAsset("httools_static")
+        } catch (e: Exception) {
+            Log.e(RebootViewModel.TAG, e.message, e)
+            setContent {
+                KernelFlasherTheme {
+                    ErrorScreen(e.message!!)
+                }
+            }
+        }
+        setContent {
+            val navController = rememberAnimatedNavController()
+            viewModel = viewModel {
+                val application = checkNotNull(get(ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY))
+                MainViewModel(application, fileSystemManager, navController)
+            }
+            val mainViewModel = viewModel!!
+            KernelFlasherTheme {
+                if (!mainViewModel.hasError) {
+                    mainListener = MainListener {
+                        mainViewModel.refresh(this)
+                    }
+                    val slotViewModelA = mainViewModel.slotA
+                    val slotViewModelB = mainViewModel.slotB
+                    val backupsViewModel = mainViewModel.backups
+                    val rebootViewModel = mainViewModel.reboot
+                    BackHandler(enabled = mainViewModel.isRefreshing, onBack = {})
+                    AnimatedNavHost(navController = navController, startDestination = "main") {
+                        composable("main") {
+                            RefreshableScreen(mainViewModel, navController, swipeEnabled = true) {
+                                MainContent(mainViewModel, navController)
+                            }
                         }
-                        val slotViewModelA = mainViewModel.slotA
-                        val slotViewModelB = mainViewModel.slotB
-                        val backupsViewModel = mainViewModel.backups
-                        AnimatedNavHost(navController = navController, startDestination = "main") {
-                            composable("main") {
-                                RefreshableScreen(mainViewModel, navController) {
-                                    MainContent(mainViewModel, navController)
-                                }
+                        composable("slot{slotSuffix}") { backStackEntry ->
+                            val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
+                            val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
+                            if (slotViewModel.wasFlashSuccess != null && navController.currentDestination!!.route.equals("slot{slotSuffix}")) {
+                                slotViewModel.clearFlash(this@MainActivity)
                             }
-                            composable("slot{slotSuffix}") { backStackEntry ->
-                                val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
-                                val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
-                                if (slotViewModel.wasFlashSuccess != null && navController.currentDestination!!.route.equals("slot{slotSuffix}")) {
-                                    slotViewModel.clearFlash(this@MainActivity)
-                                }
-                                RefreshableScreen(mainViewModel, navController) {
-                                    SlotContent(slotViewModel, slotSuffix, navController)
-                                }
+                            RefreshableScreen(mainViewModel, navController, swipeEnabled = true) {
+                                SlotContent(slotViewModel, slotSuffix, navController)
                             }
-                            composable("slot{slotSuffix}/flash") { backStackEntry ->
-                                val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
-                                val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
-                                RefreshableScreen(mainViewModel, navController) {
-                                    SlotFlashContent(slotViewModel, slotSuffix, navController)
-                                }
+                        }
+                        composable("slot{slotSuffix}/flash") { backStackEntry ->
+                            val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
+                            val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
+                            RefreshableScreen(mainViewModel, navController) {
+                                SlotFlashContent(slotViewModel, slotSuffix, navController)
                             }
-                            composable("slot{slotSuffix}/backups") { backStackEntry ->
-                                val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
-                                val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
-                                backupsViewModel.clearCurrent()
+                        }
+                        composable("slot{slotSuffix}/backups") { backStackEntry ->
+                            val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
+                            val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
+                            backupsViewModel.clearCurrent()
+                            RefreshableScreen(mainViewModel, navController) {
+                                SlotBackupsContent(slotViewModel, backupsViewModel, slotSuffix, navController)
+                            }
+                        }
+                        composable("slot{slotSuffix}/backups/{backupId}") { backStackEntry ->
+                            val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
+                            val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
+                            backupsViewModel.currentBackup = backStackEntry.arguments?.getString("backupId")
+                            if (backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
                                 RefreshableScreen(mainViewModel, navController) {
                                     SlotBackupsContent(slotViewModel, backupsViewModel, slotSuffix, navController)
                                 }
                             }
-                            composable("slot{slotSuffix}/backups/{backupId}") { backStackEntry ->
-                                val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
-                                val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
-                                backupsViewModel.currentBackup = backStackEntry.arguments?.getString("backupId")
-                                if (backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
-                                    RefreshableScreen(mainViewModel, navController) {
-                                        SlotBackupsContent(slotViewModel, backupsViewModel, slotSuffix, navController)
-                                    }
+                        }
+                        composable("slot{slotSuffix}/backups/{backupId}/flash") { backStackEntry ->
+                            val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
+                            val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
+                            backupsViewModel.currentBackup = backStackEntry.arguments?.getString("backupId")
+                            if (backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
+                                RefreshableScreen(mainViewModel, navController) {
+                                    SlotFlashContent(slotViewModel, slotSuffix, navController)
                                 }
                             }
-                            composable("slot{slotSuffix}/backups/{backupId}/flash") { backStackEntry ->
-                                val slotSuffix = backStackEntry.arguments?.getString("slotSuffix")!!
-                                val slotViewModel = if (slotSuffix == "_a") slotViewModelA else slotViewModelB
-                                backupsViewModel.currentBackup = backStackEntry.arguments?.getString("backupId")
-                                if (backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
-                                    RefreshableScreen(mainViewModel, navController) {
-                                        SlotFlashContent(slotViewModel, slotSuffix, navController)
-                                    }
-                                }
+                        }
+                        composable("backups") {
+                            backupsViewModel.clearCurrent()
+                            RefreshableScreen(mainViewModel, navController) {
+                                BackupsContent(backupsViewModel, navController)
                             }
-                            composable("backups") {
-                                backupsViewModel.clearCurrent()
+                        }
+                        composable("backups/{backupId}") { backStackEntry ->
+                            backupsViewModel.currentBackup = backStackEntry.arguments?.getString("backupId")
+                            if (backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
                                 RefreshableScreen(mainViewModel, navController) {
                                     BackupsContent(backupsViewModel, navController)
                                 }
                             }
-                            composable("backups/{backupId}") { backStackEntry ->
-                                backupsViewModel.currentBackup = backStackEntry.arguments?.getString("backupId")
-                                if (backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
-                                    RefreshableScreen(mainViewModel, navController) {
-                                        BackupsContent(backupsViewModel, navController)
-                                    }
-                                }
-                            }
-                            composable("error/{error}") { backStackEntry ->
-                                val error = backStackEntry.arguments?.getString("error")
-                                ErrorScreen(error!!)
+                        }
+                        composable("reboot") {
+                            RefreshableScreen(mainViewModel, navController) {
+                                RebootContent(rebootViewModel, navController)
                             }
                         }
-                    } else {
-                        ErrorScreen(mainViewModel.error)
+                        composable("error/{error}") { backStackEntry ->
+                            val error = backStackEntry.arguments?.getString("error")
+                            ErrorScreen(error!!)
+                        }
                     }
                 } else {
-                    ErrorScreen(stringResource(R.string.root_required))
+                    ErrorScreen(mainViewModel.error)
                 }
             }
         }

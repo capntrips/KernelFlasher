@@ -1,6 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Kernel Flasher</string>
     <string name="root_required">Root is required</string>
+    <string name="root_service_disconnected">Root service disconnected</string>
     <string name="device">Device</string>
     <string name="model">Model</string>
     <string name="build_number">Build Number</string>
@@ -29,9 +30,15 @@
     <string name="unmount_vendor_dlkm">Unmount Vendor DLKM</string>
     <string name="map_vendor_dlkm">Map Vendor DLKM</string>
     <string name="unmap_vendor_dlkm">Unmap Vendor DLKM</string>
+    <string name="migrate">Migrate</string>
     <string name="no_backups_found">No Backups Found</string>
     <string name="delete">Delete</string>
     <string name="reboot">Reboot</string>
+    <string name="reboot_userspace">Soft Reboot</string>
+    <string name="reboot_recovery">Reboot to Recovery</string>
+    <string name="reboot_bootloader">Reboot to Bootloader</string>
+    <string name="reboot_download">Reboot to Download</string>
+    <string name="reboot_edl">Reboot to EDL</string>
     <string name="save_ak3_log">Save AK3 Log</string>
     <string name="save_ak3_zip_as_backup">Save AK3 Zip as Backup</string>
     <string name="backup_type">Backup Type</string>

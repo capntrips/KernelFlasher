@@ -3,6 +3,7 @@ package com.github.capntrips.kernelflasher.ui.screens.slot
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.MutableState
@@ -12,34 +13,43 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.github.capntrips.kernelflasher.common.PartitionUtil
+import com.github.capntrips.kernelflasher.common.extensions.ByteArray.toHex
+import com.github.capntrips.kernelflasher.common.types.Backup
+import com.github.capntrips.kernelflasher.common.types.Partitions
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.io.SuFile
 import com.topjohnwu.superuser.io.SuFileInputStream
+import com.topjohnwu.superuser.io.SuFileOutputStream
+import com.topjohnwu.superuser.nio.FileSystemManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
-import java.io.FileOutputStream
+import java.security.DigestOutputStream
+import java.security.MessageDigest
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Properties
 import java.util.zip.ZipFile
 
 class SlotViewModel(
     context: Context,
+    @Suppress("unused") private val fileSystemManager: FileSystemManager,
+    private val navController: NavController,
+    private val _isRefreshing: MutableState<Boolean>,
     val isActive: Boolean,
     val slotSuffix: String,
     private val boot: File,
-    private val _isRefreshing: MutableState<Boolean>,
-    private val navController: NavController,
-    private val isImage: Boolean = false,
-    private val backups: HashMap<String, Properties>? = null
+    private val _backups: MutableMap<String, Backup>
 ) : ViewModel() {
     companion object {
         const val TAG: String = "KernelFlasher/SlotState"
     }
 
-    var _sha1: String? = null
+    @Suppress("PropertyName")
+    private var _sha1: String? = null
     var kernelVersion: String? = null
     var hasVendorDlkm: Boolean = false
     var isVendorDlkmMapped: Boolean = false
@@ -49,6 +59,9 @@ class SlotViewModel(
     private val _wasFlashSuccess: MutableState<Boolean?> = mutableStateOf(null)
     private var wasSlotReset: Boolean = false
     private var isFlashing: Boolean = false
+    private var flashUri: Uri? = null
+    private var flashFilename: String? = null
+    private val hashAlgorithm: String = "SHA-256"
     private var inInit = true
     private var _error: String? = null
 
@@ -74,15 +87,14 @@ class SlotViewModel(
 
         val ramdisk = File(context.filesDir, "ramdisk.cpio")
 
-        val mapperDir = "/dev/block/mapper"
-        var vendorDlkm = SuFile(mapperDir, "vendor_dlkm$slotSuffix")
-        hasVendorDlkm = vendorDlkmAvb(context) != ""
+        var vendorDlkm = PartitionUtil.findPartitionBlockDevice(context, "vendor_dlkm", slotSuffix)
+        hasVendorDlkm = vendorDlkm != null
         if (hasVendorDlkm) {
-            isVendorDlkmMapped = vendorDlkm.exists()
+            isVendorDlkmMapped = vendorDlkm?.exists() == true
             if (isVendorDlkmMapped) {
-                isVendorDlkmMounted = isPartitionMounted(vendorDlkm)
+                isVendorDlkmMounted = isPartitionMounted(vendorDlkm!!)
                 if (!isVendorDlkmMounted) {
-                    vendorDlkm = SuFile(mapperDir, "vendor_dlkm-verity")
+                    vendorDlkm = SuFile("/dev/block/mapper/vendor_dlkm-verity")
                     isVendorDlkmMounted = isPartitionMounted(vendorDlkm)
                 }
             } else {
@@ -92,7 +104,7 @@ class SlotViewModel(
 
         val magiskboot = SuFile("/data/adb/magisk/magiskboot")
         if (magiskboot.exists()) {
-            if (!isImage || ramdisk.exists()) {
+            if (ramdisk.exists()) {
                 when (Shell.cmd("/data/adb/magisk/magiskboot cpio ramdisk.cpio test").exec().code) {
                     0 -> _sha1 = Shell.cmd("/data/adb/magisk/magiskboot sha1 $boot").exec().out[0]
                     1 -> _sha1 = Shell.cmd("/data/adb/magisk/magiskboot cpio ramdisk.cpio sha1").exec().out[0]
@@ -144,7 +156,7 @@ class SlotViewModel(
     }
 
     private fun clearTmp(context: Context) {
-        val zip = File(context.filesDir, "ak3.zip")
+        val zip = File(context.filesDir, flashFilename!!)
         val akHome = File(context.filesDir, "akhome")
         if (zip.exists()) {
             zip.delete()
@@ -171,25 +183,13 @@ class SlotViewModel(
     fun saveLog(context: Context) {
         launch {
             val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm"))
-            val log = SuFile("/sdcard/Download/ak3-log--$now.log")
+            val log = File("/sdcard/Download/ak3-log--$now.log")
             log.writeText(flashOutput.filter { !it.matches("""progress [\d.]* [\d.]*""".toRegex()) }.joinToString("\n").replace("""ui_print (.*)\n {6}ui_print""".toRegex(), "$1"))
             if (log.exists()) {
                 log(context, "Saved AK3 log to $log")
             } else {
                 log(context, "Failed to save $log", shouldThrow = true)
             }
-        }
-    }
-
-    fun reboot(context: Context? = null, clear: Boolean = false) {
-        if (clear) {
-            _clearFlash()
-        }
-        launch {
-            if (clear) {
-                clearTmp(context!!)
-            }
-            Shell.cmd("reboot").exec()
         }
     }
 
@@ -212,21 +212,15 @@ class SlotViewModel(
         }
     }
 
-    fun isPartitionMounted(partition: File): Boolean {
+    private fun isPartitionMounted(partition: File): Boolean {
         @Suppress("LiftReturnOrAssignment")
         if (partition.exists()) {
             val dmPath = Shell.cmd("readlink -f $partition").exec().out[0]
             val mounts = Shell.cmd("mount | grep $dmPath").exec().out
-            return mounts.isNotEmpty();
+            return mounts.isNotEmpty()
         } else {
-            return false;
+            return false
         }
-    }
-
-    fun vendorDlkmAvb(context: Context): String {
-        val httools = File(context.filesDir, "httools_static")
-        val result = Shell.cmd("$httools avb vendor_dlkm").exec().out
-        return if (result.isNotEmpty()) result[0] else ""
     }
 
     fun unmountVendorDlkm(context: Context) {
@@ -270,40 +264,50 @@ class SlotViewModel(
         }
     }
 
-    private fun backupPartition(context: Context, partition: File, destination: File, isOptional: Boolean = false) {
+    private fun backupPartition(partition: SuFile, destination: File): String? {
         if (partition.exists()) {
+            val messageDigest = MessageDigest.getInstance(hashAlgorithm)
             SuFileInputStream.open(partition).use { inputStream ->
-                FileOutputStream(destination).use { outputStream ->
-                    inputStream.copyTo(outputStream)
+                SuFileOutputStream.open(destination).use { outputStream ->
+                    DigestOutputStream(outputStream, messageDigest).use { digestOutputStream ->
+                        inputStream.copyTo(digestOutputStream)
+                    }
                 }
             }
-        } else if (!isOptional) {
-            log(context, "Partition ${partition.name} was not found", shouldThrow = true)
+            return messageDigest.digest().toHex()
         }
+        return null
     }
 
-    @Suppress("SameParameterValue")
-    private fun backupLogicalPartition(context: Context, partitionName: String, destination: File, isOptional: Boolean = false) {
-        val partition = SuFile("/dev/block/mapper/$partitionName$slotSuffix")
-        val destinationFile = File(destination, "$partitionName.img")
-        backupPartition(context, partition, destinationFile, isOptional)
-    }
-
-    private fun backupPhysicalPartition(context: Context, partitionName: String, destination: File, isOptional: Boolean = false) {
-        val partition = SuFile(boot.parentFile!!, "$partitionName$slotSuffix")
-        val destinationFile = File(destination, "$partitionName.img")
-        backupPartition(context, partition, destinationFile, isOptional)
+    private fun backupPartitions(context: Context, destination: File): Partitions {
+        val partitions = HashMap<String, String>()
+        for (partitionName in PartitionUtil.PartitionNames) {
+            val blockDevice = PartitionUtil.findPartitionBlockDevice(context, partitionName, slotSuffix)
+            if (blockDevice != null) {
+                val hash = backupPartition(blockDevice, File(destination, "$partitionName.img"))
+                if (hash != null) {
+                    partitions[partitionName] = hash
+                }
+            }
+        }
+        return Partitions.from(partitions)
     }
 
     private fun createBackupDir(context: Context, now: String): File {
-        val externalDir = context.getExternalFilesDir(null)
-        val backupsDir = File(externalDir, "backups")
+        @SuppressLint("SdCardPath")
+        val externalDir = SuFile("/sdcard/KernelFlasher")
+        if (!externalDir.exists()) {
+            if (!externalDir.mkdir()) {
+                log(context, "Failed to create KernelFlasher dir on /sdcard", shouldThrow = true)
+            }
+        }
+        val backupsDir = SuFile(externalDir, "backups")
         if (!backupsDir.exists()) {
             if (!backupsDir.mkdir()) {
                 log(context, "Failed to create backups dir", shouldThrow = true)
             }
         }
-        val backupDir = File(backupsDir, now)
+        val backupDir = SuFile(backupsDir, now)
         if (backupDir.exists()) {
             log(context, "Backup $now already exists", shouldThrow = true)
         } else {
@@ -316,30 +320,23 @@ class SlotViewModel(
 
     fun backup(context: Context, callback: () -> Unit) {
         launch {
-            val props = Properties()
-            props.setProperty("type", "raw")
-            props.setProperty("sha1", sha1)
-            if (kernelVersion != null) {
-                props.setProperty("kernel", kernelVersion)
+            val currentKernelVersion = if (kernelVersion != null) {
+                kernelVersion
             } else if (isActive) {
-                props.setProperty("kernel", System.getProperty("os.version")!!)
+                System.getProperty("os.version")!!
             } else {
                 _getKernel(context)
-                props.setProperty("kernel", kernelVersion!!)
+                kernelVersion
             }
             val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm"))
             val backupDir = createBackupDir(context, now)
-            val propFile = File(backupDir, "backup.prop")
+            val hashes = backupPartitions(context, backupDir)
+            val jsonFile = File(backupDir, "backup.json")
+            val backup = Backup(now, "raw", currentKernelVersion!!, sha1, null, hashes, hashAlgorithm)
+            val indentedJson = Json { prettyPrint = true }
             @Suppress("BlockingMethodInNonBlockingContext")
-            props.store(propFile.outputStream(), props.getProperty("kernel"))
-            backupPhysicalPartition(context, "boot", backupDir)
-            backupPhysicalPartition(context, "vbmeta", backupDir)
-            backupLogicalPartition(context, "vendor_dlkm", backupDir, true)
-            backupPhysicalPartition(context, "vendor_boot", backupDir, true)
-            backupPhysicalPartition(context, "dtbo", backupDir, true)
-            backupPhysicalPartition(context, "init_boot", backupDir, true)
-            backupPhysicalPartition(context, "recovery", backupDir, true)
-            backups?.put(now, props)
+            SuFileOutputStream.open(jsonFile).use { it.write(indentedJson.encodeToString(backup).toByteArray(Charsets.UTF_8)) }
+            _backups[now] = backup
             withContext (Dispatchers.Main) {
                 callback.invoke()
             }
@@ -348,24 +345,25 @@ class SlotViewModel(
 
     fun backupZip(context: Context, callback: () -> Unit) {
         launch {
-            val zip = File(context.filesDir, "ak3.zip")
-            if (zip.exists()) {
-                val props = Properties()
-                props.setProperty("type", "ak3")
+            @Suppress("BlockingMethodInNonBlockingContext")
+            val source = context.contentResolver.openInputStream(flashUri!!)
+            if (source != null) {
                 _getKernel(context)
-                props.setProperty("kernel", kernelVersion!!)
                 val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm"))
                 val backupDir = createBackupDir(context, now)
-                val propFile = File(backupDir, "backup.prop")
+                val jsonFile = File(backupDir, "backup.json")
+                val backup = Backup(now, "ak3", kernelVersion!!, null, flashFilename)
+                val indentedJson = Json { prettyPrint = true }
                 @Suppress("BlockingMethodInNonBlockingContext")
-                props.store(propFile.outputStream(), props.getProperty("kernel"))
-                val destination = File(backupDir, "ak3.zip")
-                zip.inputStream().use { inputStream ->
-                    destination.outputStream().use { outputStream ->
+                SuFileOutputStream.open(jsonFile).use { it.write(indentedJson.encodeToString(backup).toByteArray(Charsets.UTF_8)) }
+                val destination = File(backupDir, flashFilename!!)
+                source.use { inputStream ->
+                    @Suppress("BlockingMethodInNonBlockingContext")
+                    SuFileOutputStream.open(destination).use { outputStream ->
                         inputStream.copyTo(outputStream)
                     }
                 }
-                backups?.put(now, props)
+                _backups[now] = backup
                 withContext (Dispatchers.Main) {
                     callback.invoke()
                 }
@@ -382,10 +380,11 @@ class SlotViewModel(
         wasSlotReset = !wasSlotReset
     }
 
-    @Suppress("BlockingMethodInNonBlockingContext", "FunctionName")
+    @Suppress("FunctionName")
     suspend fun _checkZip(context: Context, zip: File, callback: () -> Unit) {
         if (zip.exists()) {
             try {
+                @Suppress("BlockingMethodInNonBlockingContext")
                 val zipFile = ZipFile(zip)
                 zipFile.use { z ->
                     if (z.getEntry("anykernel.sh") == null) {
@@ -404,14 +403,23 @@ class SlotViewModel(
         }
     }
 
-    fun checkZip(context: Context, currentBackup: String, callback: () -> Unit) {
+    fun checkZip(context: Context, currentBackup: String, filename: String, callback: () -> Unit) {
         launch {
-            val externalDir = context.getExternalFilesDir(null)
-            val backupsDir = File(externalDir, "backups")
-            val backupDir = File(backupsDir, currentBackup)
-            val source = File(backupDir, "ak3.zip")
-            val zip = File(context.filesDir, "ak3.zip")
-            source.inputStream().use { inputStream ->
+            flashUri = null
+            flashFilename = filename
+            @SuppressLint("SdCardPath")
+            val externalDir = File("/sdcard/KernelFlasher")
+            val backupsDir = fileSystemManager.getFile("$externalDir/backups")
+            val backupDir = backupsDir.getChildFile(currentBackup)
+            if (!backupDir.exists()) {
+                log(context, "Backup $currentBackup does not exists", shouldThrow = true)
+                return@launch
+            }
+            val source = backupDir.getChildFile(flashFilename!!)
+            val zip = File(context.filesDir, flashFilename!!)
+            @Suppress("BlockingMethodInNonBlockingContext")
+            source.newInputStream().use { inputStream ->
+                @Suppress("BlockingMethodInNonBlockingContext")
                 zip.outputStream().use { outputStream ->
                     inputStream.copyTo(outputStream)
                 }
@@ -420,11 +428,17 @@ class SlotViewModel(
         }
     }
 
-    @Suppress("BlockingMethodInNonBlockingContext")
     fun checkZip(context: Context, uri: Uri, callback: () -> Unit) {
         launch {
+            flashUri = uri
+            flashFilename = context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                if (!cursor.moveToFirst()) return@use null
+                val name = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                return@use cursor.getString(name)
+            } ?: "ak3.zip"
+            @Suppress("BlockingMethodInNonBlockingContext")
             val source = context.contentResolver.openInputStream(uri)
-            val zip = File(context.filesDir, "ak3.zip")
+            val zip = File(context.filesDir, flashFilename!!)
             source.use { inputStream ->
                 zip.outputStream().use { outputStream ->
                     inputStream?.copyTo(outputStream)
@@ -434,7 +448,6 @@ class SlotViewModel(
         }
     }
 
-    @Suppress("BlockingMethodInNonBlockingContext")
     fun flash(context: Context) {
         if (!isFlashing) {
             isFlashing = true
@@ -442,7 +455,7 @@ class SlotViewModel(
                 if (!isActive) {
                     resetSlot()
                 }
-                val zip = File(context.filesDir, "ak3.zip")
+                val zip = File(context.filesDir, flashFilename!!)
                 val akHome = File(context.filesDir, "akhome")
                 try {
                     if (zip.exists()) {
@@ -465,6 +478,7 @@ class SlotViewModel(
                         } else {
                             log(context, "Failed to create temporary folder", shouldThrow = true)
                         }
+                        clearTmp(context)
                     } else {
                         log(context, "AK3 zip is missing", shouldThrow = true)
                     }

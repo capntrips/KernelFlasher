@@ -32,12 +32,12 @@ fun ColumnScope.BackupsContent(
     val context = LocalContext.current
     if (viewModel.currentBackup != null && viewModel.backups.containsKey(viewModel.currentBackup)) {
         DataCard (viewModel.currentBackup!!) {
-            val props = viewModel.backups.getValue(viewModel.currentBackup!!)
-            DataRow(stringResource(R.string.backup_type), props.getProperty("type", "raw"))
-            if (props.getProperty("type", "raw").equals("raw")) {
-                DataRow(stringResource(R.string.boot_sha1), props.getProperty("sha1").substring(0, 8))
+            val currentBackup = viewModel.backups.getValue(viewModel.currentBackup!!)
+            DataRow(stringResource(R.string.backup_type), currentBackup.type)
+            if (currentBackup.type == "raw") {
+                DataRow(stringResource(R.string.boot_sha1), currentBackup.bootSha1!!.substring(0, 8))
             }
-            DataRow(stringResource(R.string.kernel_version), props.getProperty("kernel"))
+            DataRow(stringResource(R.string.kernel_version), currentBackup.kernelVersion)
         }
         AnimatedVisibility(!viewModel.isRefreshing) {
             Column {
@@ -54,9 +54,22 @@ fun ColumnScope.BackupsContent(
         }
     } else {
         DataCard(stringResource(R.string.backups))
+        AnimatedVisibility(viewModel.needsMigration) {
+            Column {
+                Spacer(Modifier.height(5.dp))
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(4.dp),
+                    onClick = { viewModel.migrate(context) }
+                ) {
+                    Text(stringResource(R.string.migrate))
+                }
+            }
+        }
         if (viewModel.backups.isNotEmpty()) {
             for (id in viewModel.backups.keys.sortedByDescending { it }) {
-                val props = viewModel.backups[id]!!
+                val currentBackup = viewModel.backups[id]!!
                 Spacer(Modifier.height(16.dp))
                 DataCard(
                     title = id,
@@ -70,10 +83,10 @@ fun ColumnScope.BackupsContent(
                         }
                     }
                 ) {
-                    if (props.getProperty("type", "raw").equals("raw")) {
-                        DataRow(stringResource(R.string.boot_sha1), props.getProperty("sha1").substring(0, 8))
+                    if (currentBackup.type == "raw") {
+                        DataRow(stringResource(R.string.boot_sha1), currentBackup.bootSha1!!.substring(0, 8))
                     }
-                    DataRow(stringResource(R.string.kernel_version), props.getProperty("kernel"))
+                    DataRow(stringResource(R.string.kernel_version), currentBackup.kernelVersion)
                 }
             }
         } else {
