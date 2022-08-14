@@ -69,6 +69,16 @@ fun ColumnScope.MainContent(
             Text(stringResource(R.string.backups))
         }
     }
+    AnimatedVisibility(!viewModel.isRefreshing) {
+        OutlinedButton(
+            modifier = Modifier
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(4.dp),
+            onClick = { navController.navigate("updates") }
+        ) {
+            Text(stringResource(R.string.updates))
+        }
+    }
     if (viewModel.hasRamoops) {
         OutlinedButton(
             modifier = Modifier

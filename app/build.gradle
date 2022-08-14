@@ -1,18 +1,19 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.kapt'
     id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
 android {
-    compileSdk 32
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.github.capntrips.kernelflasher"
         minSdk 30
-        targetSdk 32
-        versionCode 9
-        versionName "1.0.0-alpha09"
+        targetSdk 33
+        versionCode 10
+        versionName "1.0.0-alpha10"
 
         vectorDrawables {
             useSupportLibrary true
@@ -46,6 +47,7 @@ android {
 
 dependencies {
     implementation "androidx.activity:activity-compose:$activity_version"
+    implementation "androidx.appcompat:appcompat:$appcompat_version"
     implementation "androidx.compose.material3:material3:$material3_version"
     implementation "androidx.compose.foundation:foundation:$compose_version"
     implementation "androidx.compose.ui:ui:$compose_version"
@@ -54,6 +56,9 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
     implementation "androidx.navigation:navigation-compose:$nav_version"
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
+    kapt "androidx.room:room-compiler:$room_version"
     implementation "com.github.topjohnwu.libsu:core:$libsu_version"
     implementation "com.github.topjohnwu.libsu:io:$libsu_version"
     implementation "com.github.topjohnwu.libsu:nio:$libsu_version"
@@ -61,9 +66,6 @@ dependencies {
     implementation "com.google.accompanist:accompanist-navigation-animation:$accompanist_version"
     implementation "com.google.accompanist:accompanist-swiperefresh:$accompanist_version"
     implementation "com.google.android.material:material:$material_version"
-    implementation "androidx.appcompat:appcompat:$appcompat_version"
-    implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
+    implementation("com.squareup.okhttp3:okhttp:$okhttp_version")
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_version"
-    debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
-    debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
 }

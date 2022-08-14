@@ -10,10 +10,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.github.capntrips.kernelflasher.common.PartitionUtil
-import com.github.capntrips.kernelflasher.common.types.Backup
+import com.github.capntrips.kernelflasher.common.types.backups.Backup
 import com.github.capntrips.kernelflasher.ui.screens.backups.BackupsViewModel
 import com.github.capntrips.kernelflasher.ui.screens.reboot.RebootViewModel
 import com.github.capntrips.kernelflasher.ui.screens.slot.SlotViewModel
+import com.github.capntrips.kernelflasher.ui.screens.updates.UpdatesViewModel
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.nio.FileSystemManager
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +37,7 @@ class MainViewModel(
     val slotA: SlotViewModel
     val slotB: SlotViewModel
     val backups: BackupsViewModel
+    val updates: UpdatesViewModel
     val reboot: RebootViewModel
     val hasRamoops: Boolean
 
@@ -57,6 +59,7 @@ class MainViewModel(
 
         slotSuffix = Shell.cmd("getprop ro.boot.slot_suffix").exec().out[0]
         backups = BackupsViewModel(context, fileSystemManager, navController, _isRefreshing, _backups)
+        updates = UpdatesViewModel(context, fileSystemManager, navController, _isRefreshing)
         reboot = RebootViewModel(context, fileSystemManager, navController, _isRefreshing)
         slotA = SlotViewModel(context, fileSystemManager, navController, _isRefreshing, slotSuffix == "_a", "_a", bootA, _backups)
         if (slotA.hasError) {
@@ -81,7 +84,9 @@ class MainViewModel(
 
     private fun launch(block: suspend () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
-            _isRefreshing.value = true
+            viewModelScope.launch(Dispatchers.Main) {
+                _isRefreshing.value = true
+            }
             try {
                 block()
             } catch (e: Exception) {
@@ -92,7 +97,9 @@ class MainViewModel(
                     }
                 }
             }
-            _isRefreshing.value = false
+            viewModelScope.launch(Dispatchers.Main) {
+                _isRefreshing.value = false
+            }
         }
     }
 

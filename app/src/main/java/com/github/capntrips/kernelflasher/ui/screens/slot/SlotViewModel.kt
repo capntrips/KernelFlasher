@@ -15,8 +15,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.github.capntrips.kernelflasher.common.PartitionUtil
 import com.github.capntrips.kernelflasher.common.extensions.ByteArray.toHex
-import com.github.capntrips.kernelflasher.common.types.Backup
-import com.github.capntrips.kernelflasher.common.types.Partitions
+import com.github.capntrips.kernelflasher.common.types.backups.Backup
+import com.github.capntrips.kernelflasher.common.types.partitions.Partitions
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.io.SuFile
 import com.topjohnwu.superuser.io.SuFileInputStream
@@ -463,9 +463,9 @@ class SlotViewModel(
                         _wasFlashSuccess.value = false
                         if (akHome.exists()) {
                             val updateBinary = File(akHome, "update-binary")
-                            Shell.cmd("unzip -p $zip META-INF/com/google/android/update-binary > $akHome/update-binary").exec()
+                            Shell.cmd("unzip -p \"$zip\" META-INF/com/google/android/update-binary > $akHome/update-binary").exec()
                             if (updateBinary.exists()) {
-                                val result = Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER or Shell.FLAG_REDIRECT_STDERR).build().newJob().add("AKHOME=$akHome \$SHELL $akHome/update-binary 3 1 $zip").to(flashOutput).exec()
+                                val result = Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER or Shell.FLAG_REDIRECT_STDERR).build().newJob().add("AKHOME=$akHome \$SHELL $akHome/update-binary 3 1 \"$zip\"").to(flashOutput).exec()
                                 if (result.isSuccess) {
                                     log(context, "Kernel flashed successfully")
                                     _wasFlashSuccess.value = true

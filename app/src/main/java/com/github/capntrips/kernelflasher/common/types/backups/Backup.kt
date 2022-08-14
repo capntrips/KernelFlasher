@@ -1,5 +1,6 @@
-package com.github.capntrips.kernelflasher.common.types
+package com.github.capntrips.kernelflasher.common.types.backups
 
+import com.github.capntrips.kernelflasher.common.types.partitions.Partitions
 import kotlinx.serialization.Serializable
 
 @Serializable

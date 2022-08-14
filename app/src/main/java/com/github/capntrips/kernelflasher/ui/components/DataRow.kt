@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 fun DataRow(
     label: String,
     value: String,
+    labelColor: Color = Color.Unspecified,
+    labelStyle: TextStyle = MaterialTheme.typography.labelMedium,
     valueColor: Color = Color.Unspecified,
     valueStyle: TextStyle = MaterialTheme.typography.titleSmall
 ) {
@@ -24,7 +26,8 @@ fun DataRow(
         Text(
             modifier = Modifier.alignByBaseline(),
             text = label,
-            style = MaterialTheme.typography.labelMedium
+            color = labelColor,
+            style = labelStyle
         )
         Spacer(Modifier.width(8.dp))
         SelectionContainer(Modifier.alignByBaseline()) {

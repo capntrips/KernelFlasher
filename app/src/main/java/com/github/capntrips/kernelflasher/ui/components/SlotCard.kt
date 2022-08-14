@@ -36,7 +36,7 @@ fun SlotCard(
             value = viewModel.sha1.substring(0, 8),
             valueStyle = MaterialTheme.typography.titleSmall.copy(
                 fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Thin
+                fontWeight = FontWeight.ExtraLight
             )
         )
         AnimatedVisibility(!viewModel.isRefreshing && viewModel.kernelVersion != null) {

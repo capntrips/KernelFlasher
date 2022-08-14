@@ -23,6 +23,7 @@
     <string name="save_logcat">Save logcat</string>
     <string name="back">Back</string>
     <string name="backup">Backup</string>
+    <string name="updates">Updates</string>
     <string name="flash">Flash</string>
     <string name="restore">Restore</string>
     <string name="check_kernel_version">Check Kernel Version</string>
@@ -31,8 +32,16 @@
     <string name="map_vendor_dlkm">Map Vendor DLKM</string>
     <string name="unmap_vendor_dlkm">Unmap Vendor DLKM</string>
     <string name="migrate">Migrate</string>
-    <string name="no_backups_found">No Backups Found</string>
+    <string name="no_backups_found">No backups found</string>
     <string name="delete">Delete</string>
+    <string name="add">Add</string>
+    <string name="url">URL</string>
+    <string name="version">Version</string>
+    <string name="date_released">Date Released</string>
+    <string name="last_updated">Last Updated</string>
+    <string name="changelog">Changelog</string>
+    <string name="check_for_updates">Check for Updates</string>
+    <string name="download">Download</string>
     <string name="reboot">Reboot</string>
     <string name="reboot_userspace">Soft Reboot</string>
     <string name="reboot_recovery">Reboot to Recovery</string>

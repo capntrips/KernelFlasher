@@ -23,10 +23,12 @@ import com.github.capntrips.kernelflasher.ui.theme.Orange500
 @ExperimentalMaterial3Api
 @Composable
 fun ErrorScreen(message: String) {
-    Scaffold {
+    Scaffold { paddingValues ->
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(

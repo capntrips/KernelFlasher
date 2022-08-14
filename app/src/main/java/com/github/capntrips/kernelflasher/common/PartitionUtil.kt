@@ -1,7 +1,7 @@
 package com.github.capntrips.kernelflasher.common
 
 import android.content.Context
-import com.github.capntrips.kernelflasher.common.types.FstabEntry
+import com.github.capntrips.kernelflasher.common.types.partitions.FstabEntry
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.io.SuFile
 import com.topjohnwu.superuser.nio.FileSystemManager

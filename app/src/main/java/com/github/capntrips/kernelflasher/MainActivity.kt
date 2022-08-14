@@ -30,9 +30,12 @@ import com.github.capntrips.kernelflasher.ui.screens.error.ErrorScreen
 import com.github.capntrips.kernelflasher.ui.screens.main.MainContent
 import com.github.capntrips.kernelflasher.ui.screens.main.MainViewModel
 import com.github.capntrips.kernelflasher.ui.screens.reboot.RebootContent
-import com.github.capntrips.kernelflasher.ui.screens.reboot.RebootViewModel
 import com.github.capntrips.kernelflasher.ui.screens.slot.SlotContent
 import com.github.capntrips.kernelflasher.ui.screens.slot.SlotFlashContent
+import com.github.capntrips.kernelflasher.ui.screens.updates.UpdatesAddContent
+import com.github.capntrips.kernelflasher.ui.screens.updates.UpdatesChangelogContent
+import com.github.capntrips.kernelflasher.ui.screens.updates.UpdatesContent
+import com.github.capntrips.kernelflasher.ui.screens.updates.UpdatesViewContent
 import com.github.capntrips.kernelflasher.ui.theme.KernelFlasherTheme
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
@@ -48,6 +51,7 @@ import java.io.File
 @ExperimentalAnimationApi
 class MainActivity : ComponentActivity() {
     companion object {
+        const val TAG: String = "MainActivity"
         init {
             Shell.setDefaultBuilder(Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER))
         }
@@ -145,7 +149,7 @@ class MainActivity : ComponentActivity() {
             copyAsset("lptools_static")
             copyAsset("httools_static")
         } catch (e: Exception) {
-            Log.e(RebootViewModel.TAG, e.message, e)
+            Log.e(TAG, e.message, e)
             setContent {
                 KernelFlasherTheme {
                     ErrorScreen(e.message!!)
@@ -167,6 +171,7 @@ class MainActivity : ComponentActivity() {
                     val slotViewModelA = mainViewModel.slotA
                     val slotViewModelB = mainViewModel.slotB
                     val backupsViewModel = mainViewModel.backups
+                    val updatesViewModel = mainViewModel.updates
                     val rebootViewModel = mainViewModel.reboot
                     BackHandler(enabled = mainViewModel.isRefreshing, onBack = {})
                     AnimatedNavHost(navController = navController, startDestination = "main") {
@@ -231,6 +236,37 @@ class MainActivity : ComponentActivity() {
                             if (backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
                                 RefreshableScreen(mainViewModel, navController) {
                                     BackupsContent(backupsViewModel, navController)
+                                }
+                            }
+                        }
+                        composable("updates") {
+                            updatesViewModel.clearCurrent()
+                            RefreshableScreen(mainViewModel, navController) {
+                                UpdatesContent(updatesViewModel, navController)
+                            }
+                        }
+                        composable("updates/add") {
+                            RefreshableScreen(mainViewModel, navController) {
+                                UpdatesAddContent(updatesViewModel, navController)
+                            }
+                        }
+                        composable("updates/view/{updateId}") { backStackEntry ->
+                            val updateId = backStackEntry.arguments?.getString("updateId")!!.toInt()
+                            val currentUpdate = updatesViewModel.updates.firstOrNull { it.id == updateId }
+                            updatesViewModel.currentUpdate = currentUpdate
+                            if (updatesViewModel.currentUpdate != null) {
+                                RefreshableScreen(mainViewModel, navController) {
+                                    UpdatesViewContent(updatesViewModel, navController)
+                                }
+                            }
+                        }
+                        composable("updates/view/{updateId}/changelog") { backStackEntry ->
+                            val updateId = backStackEntry.arguments?.getString("updateId")!!.toInt()
+                            val currentUpdate = updatesViewModel.updates.firstOrNull { it.id == updateId }
+                            updatesViewModel.currentUpdate = currentUpdate
+                            if (updatesViewModel.currentUpdate != null) {
+                                RefreshableScreen(mainViewModel, navController) {
+                                    UpdatesChangelogContent(updatesViewModel, navController)
                                 }
                             }
                         }

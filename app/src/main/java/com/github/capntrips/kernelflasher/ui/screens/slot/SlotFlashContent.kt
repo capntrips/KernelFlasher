@@ -1,6 +1,5 @@
 package com.github.capntrips.kernelflasher.ui.screens.slot
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween

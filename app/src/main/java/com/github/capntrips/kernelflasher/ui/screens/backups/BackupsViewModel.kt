@@ -11,7 +11,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.github.capntrips.kernelflasher.common.extensions.ExtendedFile.readText
 import com.github.capntrips.kernelflasher.common.PartitionUtil
-import com.github.capntrips.kernelflasher.common.types.Backup
+import com.github.capntrips.kernelflasher.common.types.backups.Backup
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.io.SuFile
 import com.topjohnwu.superuser.io.SuFileOutputStream

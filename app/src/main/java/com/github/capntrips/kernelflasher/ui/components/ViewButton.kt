@@ -26,6 +26,6 @@ fun ViewButton(
         ),
         onClick = onClick
     ) {
-        Text(stringResource(R.string.view))
+        Text(stringResource(R.string.view), maxLines = 1)
     }
 }
