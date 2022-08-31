@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.github.capntrips.kernelflasher.R
-import com.github.capntrips.kernelflasher.ui.components.FlashButton
 import com.github.capntrips.kernelflasher.ui.components.SlotCard
 
 @ExperimentalUnitApi
@@ -42,18 +41,24 @@ fun ColumnScope.SlotContent(
         Column {
             Spacer(Modifier.height(5.dp))
             if (viewModel.isActive) {
-                FlashButton(viewModel, callback = {
-                    navController.navigate("slot$slotSuffix/flash")
-                })
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(4.dp),
+                    onClick = {
+                        navController.navigate("slot$slotSuffix/flash")
+                    }
+                ) {
+                    Text(stringResource(R.string.flash))
+                }
             }
             OutlinedButton(
                 modifier = Modifier
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(4.dp),
                 onClick = {
-                    viewModel.backup(context) {
-                        navController.navigate("slot$slotSuffix/backups")
-                    }
+                    viewModel.clearFlash(context)
+                    navController.navigate("slot$slotSuffix/backup")
                 }
             ) {
                 Text(stringResource(R.string.backup))

@@ -5,16 +5,20 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.github.capntrips.kernelflasher.common.extensions.ExtendedFile.readText
 import com.github.capntrips.kernelflasher.common.PartitionUtil
+import com.github.capntrips.kernelflasher.common.extensions.ExtendedFile.outputStream
+import com.github.capntrips.kernelflasher.common.extensions.ExtendedFile.readText
 import com.github.capntrips.kernelflasher.common.types.backups.Backup
+import com.github.capntrips.kernelflasher.common.types.partitions.Partitions
 import com.topjohnwu.superuser.Shell
-import com.topjohnwu.superuser.io.SuFile
-import com.topjohnwu.superuser.io.SuFileOutputStream
 import com.topjohnwu.superuser.nio.ExtendedFile
 import com.topjohnwu.superuser.nio.FileSystemManager
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +29,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.FileInputStream
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Properties
 
 class BackupsViewModel(
@@ -38,12 +44,31 @@ class BackupsViewModel(
         const val TAG: String = "KernelFlasher/BackupsState"
     }
 
+    private val _restoreOutput: SnapshotStateList<String> = mutableStateListOf()
     var currentBackup: String? = null
-    var wasRestored: Boolean = false
+        set(value) {
+            if (value != field) {
+                if (_backups[value]?.hashes != null) {
+                    PartitionUtil.AvailablePartitions.forEach { partitionName ->
+                        if (_backups[value]!!.hashes!!.get(partitionName) != null) {
+                            _backupPartitions[partitionName] = true
+                        }
+                    }
+                }
+                field = value
+            }
+        }
+    var wasRestored: Boolean? = null
+    private val _backupPartitions: SnapshotStateMap<String, Boolean> = mutableStateMapOf()
+    private val hashAlgorithm: String = "SHA-256"
     @Suppress("PropertyName")
     @Deprecated("Backup migration will be removed in the first stable release")
     private var _needsMigration: MutableState<Boolean> = mutableStateOf(false)
 
+    val restoreOutput: List<String>
+        get() = _restoreOutput
+    val backupPartitions: MutableMap<String, Boolean>
+        get() = _backupPartitions
     val isRefreshing: Boolean
         get() = _isRefreshing.value
     val backups: Map<String, Backup>
@@ -112,98 +137,72 @@ class BackupsViewModel(
 
     fun clearCurrent() {
         currentBackup = null
-        wasRestored = false
+        clearRestore()
     }
 
-    private fun restorePartition(context: Context, image: ExtendedFile, blockDevice: ExtendedFile) {
-        val partitionSize = Shell.cmd("wc -c < $blockDevice").exec().out[0].toUInt()
-        val imageSize = Shell.cmd("wc -c < $image").exec().out[0].toUInt()
-        if (partitionSize < imageSize) {
-            log(context, "Partition ${blockDevice.name} is smaller than image", shouldThrow = true)
-        } else if (partitionSize == imageSize) {
-            image.newInputStream().use { inputStream ->
-                blockDevice.newOutputStream().use { outputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            }
-        } else {
-            Shell.cmd("dd bs=4096 if=/dev/zero of=$blockDevice").exec()
-            Shell.cmd("dd bs=4096 if=$image of=$blockDevice").exec()
+    private fun addMessage(message: String) {
+        viewModelScope.launch(Dispatchers.Main) {
+            _restoreOutput.add(message)
         }
     }
 
-    @Suppress("SameParameterValue")
-    private fun restoreLogicalPartition(context: Context, image: ExtendedFile, blockDevice: ExtendedFile, partitionName: String, slotSuffix: String) {
-        val sourceFileSize = Shell.cmd("wc -c < $image").exec().out[0].toUInt()
-        val lptools = File(context.filesDir, "lptools_static")
-        Shell.cmd("$lptools remove ${partitionName}_kf").exec()
-        if (Shell.cmd("$lptools create ${partitionName}_kf $sourceFileSize").exec().isSuccess) {
-            if (Shell.cmd("$lptools unmap ${partitionName}_kf").exec().isSuccess) {
-                if (Shell.cmd("$lptools map ${partitionName}_kf").exec().isSuccess) {
-                    val temporaryBlockDevice = fileSystemManager.getFile("/dev/block/mapper/${partitionName}_kf")
-                    restorePartition(context, image, temporaryBlockDevice)
-                    if (!Shell.cmd("$lptools replace ${partitionName}_kf $partitionName$slotSuffix").exec().isSuccess) {
-                        log(context, "Replacing $partitionName$slotSuffix failed", shouldThrow = true)
-                    }
-                } else {
-                    log(context, "Remapping ${partitionName}_kf failed", shouldThrow = true)
-                }
+    @Suppress("FunctionName")
+    private fun _clearRestore() {
+        _restoreOutput.clear()
+        wasRestored = null
+    }
+
+    private fun clearRestore() {
+        _clearRestore()
+        _backupPartitions.clear()
+    }
+
+    @Suppress("unused")
+    @SuppressLint("SdCardPath")
+    fun saveLog(context: Context) {
+        launch {
+            val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm"))
+            val log = File("/sdcard/Download/restore-log--$now.log")
+            log.writeText(restoreOutput.joinToString("\n"))
+            if (log.exists()) {
+                log(context, "Saved restore log to $log")
             } else {
-                log(context, "Unmapping ${partitionName}_kf failed", shouldThrow = true)
+                log(context, "Failed to save $log", shouldThrow = true)
             }
-        } else {
-            // TODO: add log for restore operations
-            // ui_print(context, "Creating ${partitionName}_kf failed. Attempting to resize $partitionName$slotSuffix...")
-            val httools = File(context.filesDir, "httools_static")
-            if (Shell.cmd("$httools umount $partitionName").exec().isSuccess) {
-                val verityBlockDevice = blockDevice.parentFile!!.getChildFile("${partitionName}-verity")
-                if (verityBlockDevice.exists()) {
-                    if (!Shell.cmd("$lptools unmap ${partitionName}-verity").exec().isSuccess) {
-                        log(context, "Unmapping ${partitionName}-verity failed", shouldThrow = true)
-                    }
-                }
-                if (Shell.cmd("$lptools unmap $partitionName$slotSuffix").exec().isSuccess) {
-                    if (Shell.cmd("$lptools resize $partitionName$slotSuffix \$(wc -c < $image)").exec().isSuccess) {
-                        if (Shell.cmd("$lptools map $partitionName$slotSuffix").exec().isSuccess) {
-                            restorePartition(context, image, blockDevice)
-                            if (!Shell.cmd("$httools mount $partitionName").exec().isSuccess) {
-                                log(context, "Mounting $partitionName failed", shouldThrow = true)
+        }
+    }
+
+    private fun restorePartitions(context: Context, source: ExtendedFile, slotSuffix: String): Partitions? {
+        val partitions = HashMap<String, String>()
+        for (partitionName in PartitionUtil.PartitionNames) {
+            if (_backups[currentBackup]?.hashes == null || _backupPartitions[partitionName] == true) {
+                val image = source.getChildFile("$partitionName.img")
+                if (image.exists()) {
+                    val blockDevice = PartitionUtil.findPartitionBlockDevice(context, partitionName, slotSuffix)
+                    if (blockDevice != null && blockDevice.exists()) {
+                        addMessage("Restoring $partitionName")
+                        partitions[partitionName] = if (PartitionUtil.isPartitionLogical(context, partitionName)) {
+                            PartitionUtil.flashLogicalPartition(context, image, blockDevice, partitionName, slotSuffix, hashAlgorithm) { message ->
+                                addMessage(message)
                             }
                         } else {
-                            log(context, "Remapping $partitionName$slotSuffix failed", shouldThrow = true)
+                            PartitionUtil.flashBlockDevice(image, blockDevice, hashAlgorithm)
                         }
                     } else {
-                        log(context, "Resizing $partitionName$slotSuffix failed", shouldThrow = true)
+                        log(context, "Partition $partitionName was not found", shouldThrow = true)
                     }
-                } else {
-                    log(context, "Unmapping $partitionName$slotSuffix failed", shouldThrow = true)
-                }
-            } else {
-                log(context, "Unmounting $partitionName failed", shouldThrow = true)
-            }
-        }
-    }
-
-    private fun restorePartitions(context: Context, source: ExtendedFile, slotSuffix: String) {
-        for (partitionName in PartitionUtil.PartitionNames) {
-            val image = source.getChildFile("$partitionName.img")
-            if (image.exists()) {
-                val blockDevice = PartitionUtil.findPartitionBlockDevice(context, partitionName, slotSuffix)
-                if (blockDevice != null && blockDevice.exists()) {
-                    if (PartitionUtil.isPartitionLogical(context, partitionName)) {
-                        restoreLogicalPartition(context, image, blockDevice, partitionName, slotSuffix)
-                    } else {
-                        restorePartition(context, image, blockDevice)
-                    }
-                } else {
-                    log(context, "Partition $partitionName was not found", shouldThrow = true)
                 }
             }
         }
+        if (partitions.isNotEmpty()) {
+            return Partitions.from(partitions)
+        }
+        return null
     }
 
     fun restore(context: Context, slotSuffix: String) {
         launch {
+            _clearRestore()
             @SuppressLint("SdCardPath")
             val externalDir = File("/sdcard/KernelFlasher")
             val backupsDir = fileSystemManager.getFile("$externalDir/backups")
@@ -212,8 +211,12 @@ class BackupsViewModel(
                 log(context, "Backup $currentBackup does not exists", shouldThrow = true)
                 return@launch
             }
-            restorePartitions(context, backupDir, slotSuffix)
-            log(context, "Backup restored successfully")
+            addMessage("Restoring backup $currentBackup")
+            val hashes = restorePartitions(context, backupDir, slotSuffix)
+            if (hashes == null) {
+                log(context, "No partitions restored", shouldThrow = true)
+            }
+            addMessage("Backup $currentBackup restored")
             wasRestored = true
         }
     }
@@ -240,13 +243,13 @@ class BackupsViewModel(
     @Deprecated("Backup migration will be removed in the first stable release")
     fun migrate(context: Context) {
         launch {
-            val externalDir = SuFile("/sdcard/KernelFlasher")
+            val externalDir = fileSystemManager.getFile("/sdcard/KernelFlasher")
             if (!externalDir.exists()) {
                 if (!externalDir.mkdir()) {
                     log(context, "Failed to create KernelFlasher dir on /sdcard", shouldThrow = true)
                 }
             }
-            val backupsDir = SuFile(externalDir, "backups")
+            val backupsDir = externalDir.getChildFile("backups")
             if (!backupsDir.exists()) {
                 if (!backupsDir.mkdir()) {
                     log(context, "Failed to create backups dir", shouldThrow = true)
@@ -277,16 +280,16 @@ class BackupsViewModel(
                         val filename = if (type == "ak3") "ak3.zip" else null
                         propFile.delete()
 
-                        val dest = SuFile(backupsDir, child.name)
+                        val dest = backupsDir.getChildFile(child.name)
                         @Suppress("BlockingMethodInNonBlockingContext")
                         Shell.cmd("mv $child $dest").exec()
                         if (!dest.exists()) {
                             throw Error("Too slow")
                         }
-                        val jsonFile = File(dest, "backup.json")
+                        val jsonFile = dest.getChildFile("backup.json")
                         val backup = Backup(name, type, kernelVersion, bootSha1, filename)
                         @Suppress("BlockingMethodInNonBlockingContext")
-                        SuFileOutputStream.open(jsonFile).use { it.write(indentedJson.encodeToString(backup).toByteArray(Charsets.UTF_8)) }
+                        jsonFile.outputStream().use { it.write(indentedJson.encodeToString(backup).toByteArray(Charsets.UTF_8)) }
                         _backups[name] = backup
                     }
                 }

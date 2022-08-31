@@ -5,7 +5,7 @@
     <string name="device">Device</string>
     <string name="model">Model</string>
     <string name="build_number">Build Number</string>
-    <string name="kernel_name">Kernel Name</string>
+    <string name="kernel_name" tools:keep="@string/kernel_name">Kernel Name</string>
     <string name="kernel_version">Kernel Version</string>
     <string name="slot_suffix">Slot Suffix</string>
     <string name="slot_a">Slot A</string>
@@ -25,6 +25,8 @@
     <string name="backup">Backup</string>
     <string name="updates">Updates</string>
     <string name="flash">Flash</string>
+    <string name="flash_ak3_zip">Flash AK3 Zip</string>
+    <string name="flash_partition_image">Flash Partition Image</string>
     <string name="restore">Restore</string>
     <string name="check_kernel_version">Check Kernel Version</string>
     <string name="mount_vendor_dlkm">Mount Vendor DLKM</string>
@@ -49,7 +51,12 @@
     <string name="reboot_download">Reboot to Download</string>
     <string name="reboot_edl">Reboot to EDL</string>
     <string name="save_ak3_log">Save AK3 Log</string>
+    <string name="save_flash_log">Save Flash Log</string>
+    <string name="save_backup_log">Save Backup Log</string>
+    <string name="save_restore_log" tools:keep="@string/save_restore_log">Save Restore Log</string>
     <string name="save_ak3_zip_as_backup">Save AK3 Zip as Backup</string>
     <string name="backup_type">Backup Type</string>
+    <string name="hashes">Hashes</string>
+    <string name="partition_selection_unavailable">Partition selection unavailable for legacy backups</string>
     <!-- TODO: Make error and success messages string resources -->
 </resources>

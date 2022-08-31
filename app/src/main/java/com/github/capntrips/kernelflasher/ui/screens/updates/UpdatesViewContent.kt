@@ -12,6 +12,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -34,8 +36,9 @@ fun ColumnScope.UpdatesViewContent(
     val context = LocalContext.current
     viewModel.currentUpdate?.let { currentUpdate ->
         DataCard(currentUpdate.kernelName) {
-            DataRow(stringResource(R.string.version), currentUpdate.kernelVersion)
-            DataRow(stringResource(R.string.date_released), DateSerializer.formatter.format(currentUpdate.kernelDate))
+            val cardWidth = remember { mutableStateOf(0) }
+            DataRow(stringResource(R.string.version), currentUpdate.kernelVersion, mutableMaxWidth = cardWidth)
+            DataRow(stringResource(R.string.date_released), DateSerializer.formatter.format(currentUpdate.kernelDate), mutableMaxWidth = cardWidth)
             DataRow(
                 label = stringResource(R.string.last_updated),
                 value = UpdatesViewModel.lastUpdatedFormatter.format(currentUpdate.lastUpdated!!),
@@ -46,7 +49,8 @@ fun ColumnScope.UpdatesViewContent(
                 valueColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.33f),
                 valueStyle = MaterialTheme.typography.titleSmall.copy(
                     fontStyle = FontStyle.Italic,
-                )
+                ),
+                mutableMaxWidth = cardWidth
             )
         }
         AnimatedVisibility(!viewModel.isRefreshing) {
@@ -60,6 +64,7 @@ fun ColumnScope.UpdatesViewContent(
                 ) {
                     Text(stringResource(R.string.changelog))
                 }
+                // TODO: add download progress indicator
                 OutlinedButton(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -80,7 +85,7 @@ fun ColumnScope.UpdatesViewContent(
                     modifier = Modifier
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(4.dp),
-                    onClick = { viewModel.delete(context) { navController.popBackStack() } }
+                    onClick = { viewModel.delete { navController.popBackStack() } }
                 ) {
                     Text(stringResource(R.string.delete))
                 }

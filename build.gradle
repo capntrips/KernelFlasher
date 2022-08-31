@@ -1,16 +1,16 @@
 buildscript {
     ext {
-        accompanist_version = '0.24.13-rc'
+        accompanist_version = '0.25.0'
         activity_version = '1.5.1'
         appcompat_version = '1.6.0-beta01'
-        compose_version = '1.3.0-alpha03'
+        compose_version = '1.3.0-beta01'
         compiler_version = '1.3.0'
         constraintlayout_version = '2.1.4'
-        core_version = '1.9.0-beta01'
+        core_version = '1.9.0-rc01'
         libsu_version = '5.0.2'
         lifecycle_version = '2.5.1'
-        material_version = '1.7.0-beta01'
-        material3_version = '1.0.0-alpha16'
+        material_version = '1.7.0-rc01'
+        material3_version = '1.0.0-beta01'
         nav_version = '2.5.1'
         okhttp_version = '4.10.0'
         room_version = '2.4.3'
@@ -20,8 +20,8 @@ buildscript {
 }
 
 plugins {
-    id 'com.android.application' version '7.2.2' apply false
-    id 'com.android.library' version '7.2.2' apply false
+    id 'com.android.application' version '7.3.0-rc01' apply false
+    id 'com.android.library' version '7.3.0-rc01' apply false
     id 'org.jetbrains.kotlin.android' version '1.7.10' apply false
     id 'org.jetbrains.kotlin.kapt' version '1.7.10' apply false
     id 'org.jetbrains.kotlin.plugin.serialization' version '1.7.10' apply false

@@ -25,4 +25,17 @@ data class Partitions(
             val partitions = Partitions(boot, vbmeta, dtbo, vendor_boot, vendor_dlkm, init_boot, recovery)
         }.partitions
     }
+
+    fun get(partition: String): String? {
+        return when (partition) {
+            "boot" -> boot
+            "vbmeta" -> vbmeta
+            "dtbo" -> dtbo
+            "vendor_boot" -> vendor_boot
+            "vendor_dlkm" -> vendor_dlkm
+            "init_boot" -> init_boot
+            "recovery" -> recovery
+            else -> null
+        }
+    }
 }

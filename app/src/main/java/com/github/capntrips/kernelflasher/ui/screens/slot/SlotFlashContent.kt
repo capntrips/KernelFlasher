@@ -1,48 +1,39 @@
 package com.github.capntrips.kernelflasher.ui.screens.slot
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.ExperimentalUnitApi
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.github.capntrips.kernelflasher.R
+import com.github.capntrips.kernelflasher.common.PartitionUtil
 import com.github.capntrips.kernelflasher.ui.components.DataCard
+import com.github.capntrips.kernelflasher.ui.components.FlashButton
+import com.github.capntrips.kernelflasher.ui.components.FlashList
+import com.github.capntrips.kernelflasher.ui.components.SlotCard
 
+@ExperimentalAnimationApi
 @ExperimentalUnitApi
 @ExperimentalMaterial3Api
 @Composable
@@ -52,128 +43,150 @@ fun ColumnScope.SlotFlashContent(
     navController: NavController
 ) {
     val context = LocalContext.current
-    if (navController.currentDestination!!.route!!.endsWith("/flash") && !viewModel.isRefreshing && viewModel.wasFlashSuccess == null) {
-        viewModel.flash(context)
-    }
-    val filteredOutput = viewModel.flashOutput.filter { it.startsWith("ui_print") }
-    val listState = rememberLazyListState()
-    var hasDragged by remember { mutableStateOf(false) }
-    val isDragged by listState.interactionSource.collectIsDraggedAsState()
-    if (isDragged) {
-        hasDragged = true
-    }
-    var shouldScroll = false
-    if (!hasDragged) {
-        if (listState.layoutInfo.visibleItemsInfo.firstOrNull()?.index != null) {
-            if (listState.layoutInfo.totalItemsCount - listState.layoutInfo.visibleItemsInfo.size > listState.layoutInfo.visibleItemsInfo.firstOrNull()?.index!!) {
-                shouldScroll = true
-            }
-        }
-    }
-    LaunchedEffect(shouldScroll) {
-        listState.animateScrollToItem(filteredOutput.size)
-    }
-    DataCard (title = stringResource(R.string.flash))
-    Spacer(Modifier.height(4.dp))
-    LazyColumn(
-        Modifier
-            .weight(1.0f)
-            .fillMaxSize()
-            .scrollbar(listState),
-        listState
-    ) {
-        items(filteredOutput) { message ->
-            Text(message.substring("ui_print".length + 1),
-                style = LocalTextStyle.current.copy(
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = TextUnit(12.0f, TextUnitType.Sp),
-                    lineHeight = TextUnit(18.0f, TextUnitType.Sp)
-                )
-            )
-        }
-    }
-    AnimatedVisibility(!viewModel.isRefreshing && viewModel.wasFlashSuccess != null) {
-        Column {
+    if (!listOf("/flash/ak3", "/flash/image/flash", "/backup/backup").any { navController.currentDestination!!.route!!.endsWith(it) }) {
+        SlotCard(
+            title = stringResource(if (slotSuffix == "_a") R.string.slot_a else R.string.slot_b),
+            viewModel = viewModel,
+            navController = navController,
+            isSlotScreen = true,
+            showDlkm = false
+        )
+        Spacer(Modifier.height(16.dp))
+        if (navController.currentDestination!!.route!! == "slot{slotSuffix}/flash") {
+            DataCard (stringResource(R.string.flash))
+            Spacer(Modifier.height(5.dp))
+            FlashButton(stringResource(R.string.flash_ak3_zip), callback = { uri ->
+                navController.navigate("slot$slotSuffix/flash/ak3") {
+                    popUpTo("slot{slotSuffix}")
+                }
+                viewModel.flashAk3(context, uri)
+            })
             OutlinedButton(
                 modifier = Modifier
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(4.dp),
-                onClick = { viewModel.saveLog(context) }
+                onClick = {
+                    navController.navigate("slot$slotSuffix/flash/image")
+                }
             ) {
-                Text(stringResource(R.string.save_ak3_log))
+                Text(stringResource(R.string.flash_partition_image))
             }
-            AnimatedVisibility(navController.currentDestination!!.route!! != "slot{slotSuffix}/backups/{backupId}/flash" && navController.previousBackStackEntry!!.destination.route!! != "slot{slotSuffix}/backups/{backupId}/flash" && viewModel.wasFlashSuccess != false) {
+        } else if (navController.currentDestination!!.route!! == "slot{slotSuffix}/flash/image") {
+            DataCard (stringResource(R.string.flash_partition_image))
+            Spacer(Modifier.height(5.dp))
+            for (partitionName in PartitionUtil.AvailablePartitions) {
+                FlashButton(partitionName, callback = { uri ->
+                    navController.navigate("slot$slotSuffix/flash/image/flash") {
+                        popUpTo("slot{slotSuffix}")
+                    }
+                    viewModel.flashImage(context, uri, partitionName)
+                })
+            }
+        } else if (navController.currentDestination!!.route!! == "slot{slotSuffix}/backup") {
+            DataCard (stringResource(R.string.backup))
+            Spacer(Modifier.height(5.dp))
+            val disabledColor = ButtonDefaults.buttonColors(
+                Color.Transparent,
+                MaterialTheme.colorScheme.onSurface
+            )
+            for (partitionName in PartitionUtil.AvailablePartitions) {
                 OutlinedButton(
                     modifier = Modifier
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .alpha(if (viewModel.backupPartitions[partitionName] == true) 1.0f else 0.5f),
                     shape = RoundedCornerShape(4.dp),
+                    colors = if (viewModel.backupPartitions[partitionName]!!) ButtonDefaults.outlinedButtonColors() else disabledColor,
                     onClick = {
-                        viewModel.backupZip(context) {
-                            navController.navigate("slot$slotSuffix/backups") {
-                                popUpTo("slot{slotSuffix}")
+                        viewModel.backupPartitions[partitionName] = !viewModel.backupPartitions[partitionName]!!
+                    },
+                ) {
+                    Box(Modifier.fillMaxWidth()) {
+                        Checkbox(viewModel.backupPartitions[partitionName]!!, null,
+                            Modifier
+                                .align(Alignment.CenterStart)
+                                .offset(x = -(16.dp)))
+                        Text(partitionName, Modifier.align(Alignment.Center))
+                    }
+                }
+            }
+            // TODO: disable button if no partitions are selected
+            OutlinedButton(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(4.dp),
+                onClick = {
+                    viewModel.backup(context)
+                    navController.navigate("slot$slotSuffix/backup/backup") {
+                        popUpTo("slot{slotSuffix}")
+                    }
+                }
+            ) {
+                Text(stringResource(R.string.backup))
+            }
+        }
+    } else {
+        Text("")
+        FlashList(
+            stringResource(if (navController.currentDestination!!.route!! == "slot{slotSuffix}/backup/backup") R.string.backup else R.string.flash),
+            if (navController.currentDestination!!.route!!.contains("ak3")) viewModel.uiPrintedOutput else viewModel.flashOutput
+        ) {
+            AnimatedVisibility(!viewModel.isRefreshing && viewModel.wasFlashSuccess != null) {
+                Column {
+                    if (navController.currentDestination!!.route!!.contains("ak3")) {
+                        OutlinedButton(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            shape = RoundedCornerShape(4.dp),
+                            onClick = { viewModel.saveLog(context) }
+                        ) {
+                            if (navController.currentDestination!!.route!!.contains("ak3")) {
+                                Text(stringResource(R.string.save_ak3_log))
+                            } else if (navController.currentDestination!!.route!! == "slot{slotSuffix}/backup/backup") {
+                                Text(stringResource(R.string.save_backup_log))
+                            } else {
+                                Text(stringResource(R.string.save_flash_log))
                             }
                         }
                     }
-                ) {
-                    Text(stringResource(R.string.save_ak3_zip_as_backup))
+                    if (navController.currentDestination!!.route!!.contains("ak3")) {
+                        AnimatedVisibility(navController.currentDestination!!.route!! != "slot{slotSuffix}/backups/{backupId}/flash/ak3" && navController.previousBackStackEntry!!.destination.route!! != "slot{slotSuffix}/backups/{backupId}/flash/ak3" && viewModel.wasFlashSuccess != false) {
+                            OutlinedButton(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                shape = RoundedCornerShape(4.dp),
+                                onClick = {
+                                    viewModel.backupZip(context) {
+                                        navController.navigate("slot$slotSuffix/backups") {
+                                            popUpTo("slot{slotSuffix}")
+                                        }
+                                    }
+                                }
+                            ) {
+                                Text(stringResource(R.string.save_ak3_zip_as_backup))
+                            }
+                        }
+                    }
+                    if (viewModel.wasFlashSuccess != false && navController.currentDestination!!.route!! == "slot{slotSuffix}/backup/backup") {
+                        OutlinedButton(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            shape = RoundedCornerShape(4.dp),
+                            onClick = { navController.popBackStack() }
+                        ) {
+                            Text(stringResource(R.string.back))
+                        }
+                    } else {
+                        OutlinedButton(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            shape = RoundedCornerShape(4.dp),
+                            onClick = { navController.navigate("reboot") }
+                        ) {
+                            Text(stringResource(R.string.reboot))
+                        }
+                    }
                 }
             }
-            if (viewModel.wasFlashSuccess != false) {
-                OutlinedButton(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(4.dp),
-                    onClick = { navController.navigate("reboot") }
-                ) {
-                    Text(stringResource(R.string.reboot))
-                }
-            }
-        }
-    }
-}
-
-// https://stackoverflow.com/a/68056586/434343
-@Composable
-fun Modifier.scrollbar(
-    state: LazyListState,
-    width: Dp = 6.dp
-): Modifier {
-    var visibleItemsCountChanged = false
-    var visibleItemsCount by remember { mutableStateOf(state.layoutInfo.visibleItemsInfo.size) }
-    if (visibleItemsCount != state.layoutInfo.visibleItemsInfo.size) {
-        visibleItemsCountChanged = true
-        @Suppress("UNUSED_VALUE")
-        visibleItemsCount = state.layoutInfo.visibleItemsInfo.size
-    }
-
-    val hidden = state.layoutInfo.visibleItemsInfo.size == state.layoutInfo.totalItemsCount
-    val targetAlpha = if (!hidden && (state.isScrollInProgress || visibleItemsCountChanged)) 0.5f else 0f
-    val delay = if (!hidden && (state.isScrollInProgress || visibleItemsCountChanged)) 0 else 250
-    val duration = if (hidden || visibleItemsCountChanged) 0 else if (state.isScrollInProgress) 150 else 500
-
-    val alpha by animateFloatAsState(
-        targetValue = targetAlpha,
-        animationSpec = tween(delayMillis = delay, durationMillis = duration)
-    )
-
-    return drawWithContent {
-        drawContent()
-
-        val firstVisibleElementIndex = state.layoutInfo.visibleItemsInfo.firstOrNull()?.index
-        val needDrawScrollbar = state.isScrollInProgress || visibleItemsCountChanged || alpha > 0.0f
-
-        if (needDrawScrollbar && firstVisibleElementIndex != null) {
-            val elementHeight = this.size.height / state.layoutInfo.totalItemsCount
-            val scrollbarOffsetY = firstVisibleElementIndex * elementHeight
-            val scrollbarHeight = state.layoutInfo.visibleItemsInfo.size * elementHeight
-
-            drawRoundRect(
-                color = Color.Gray,
-                topLeft = Offset(this.size.width - width.toPx(), scrollbarOffsetY),
-                size = Size(width.toPx(), scrollbarHeight),
-                cornerRadius = CornerRadius(width.toPx(), width.toPx()),
-                alpha = alpha
-            )
         }
     }
 }

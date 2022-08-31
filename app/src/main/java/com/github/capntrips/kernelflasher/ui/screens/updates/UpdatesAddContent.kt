@@ -30,7 +30,7 @@ fun ColumnScope.UpdatesAddContent(
     viewModel: UpdatesViewModel,
     navController: NavController
 ) {
-    val context = LocalContext.current
+    @Suppress("UNUSED_VARIABLE") val context = LocalContext.current
     var url by remember { mutableStateOf("") }
     OutlinedTextField(
         value = url,

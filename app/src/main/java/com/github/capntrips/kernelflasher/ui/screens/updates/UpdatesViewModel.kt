@@ -18,7 +18,6 @@ import androidx.room.Room
 import com.github.capntrips.kernelflasher.common.types.room.AppDatabase
 import com.github.capntrips.kernelflasher.common.types.room.updates.Update
 import com.github.capntrips.kernelflasher.common.types.room.updates.UpdateSerializer
-import com.github.capntrips.kernelflasher.ui.screens.backups.BackupsViewModel
 import com.topjohnwu.superuser.nio.FileSystemManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -77,7 +76,7 @@ class UpdatesViewModel(
                 block()
             } catch (e: Exception) {
                 withContext (Dispatchers.Main) {
-                    Log.e(BackupsViewModel.TAG, e.message, e)
+                    Log.e(TAG, e.message, e)
                     navController.navigate("error/${e.message}") {
                         popUpTo("main")
                     }
@@ -91,7 +90,7 @@ class UpdatesViewModel(
 
     @Suppress("SameParameterValue")
     private fun log(context: Context, message: String, shouldThrow: Boolean = false) {
-        Log.d(BackupsViewModel.TAG, message)
+        Log.d(TAG, message)
         if (!shouldThrow) {
             viewModelScope.launch(Dispatchers.Main) {
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -212,7 +211,7 @@ class UpdatesViewModel(
         }
     }
 
-    fun delete(context: Context, callback: () -> Unit) {
+    fun delete(callback: () -> Unit) {
         launch {
             updateDao.delete(currentUpdate!!)
             withContext (Dispatchers.Main) {

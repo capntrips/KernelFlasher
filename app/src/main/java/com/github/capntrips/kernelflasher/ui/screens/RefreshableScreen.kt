@@ -92,6 +92,7 @@ fun RefreshableScreen(
                 .fillMaxSize(),
             state = rememberSwipeRefreshState(viewModel.isRefreshing),
             swipeEnabled = swipeEnabled,
+            // TODO: move onRefresh to signature?
             onRefresh = { viewModel.refresh(context) },
             indicator = { state, trigger ->
                 SwipeRefreshIndicator(

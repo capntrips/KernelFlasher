@@ -12,6 +12,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -30,7 +32,7 @@ fun ColumnScope.UpdatesContent(
     viewModel: UpdatesViewModel,
     navController: NavController
 ) {
-    val context = LocalContext.current
+    @Suppress("UNUSED_VARIABLE") val context = LocalContext.current
     DataCard(stringResource(R.string.updates))
     if (viewModel.updates.isNotEmpty()) {
         for (update in viewModel.updates.sortedByDescending { it.kernelDate }) {
@@ -47,8 +49,9 @@ fun ColumnScope.UpdatesContent(
                     }
                 }
             ) {
-                DataRow(stringResource(R.string.version), update.kernelVersion)
-                DataRow(stringResource(R.string.date_released), DateSerializer.formatter.format(update.kernelDate))
+                val cardWidth = remember { mutableStateOf(0) }
+                DataRow(stringResource(R.string.version), update.kernelVersion, mutableMaxWidth = cardWidth)
+                DataRow(stringResource(R.string.date_released), DateSerializer.formatter.format(update.kernelDate), mutableMaxWidth = cardWidth)
                 DataRow(
                     label = stringResource(R.string.last_updated),
                     value = UpdatesViewModel.lastUpdatedFormatter.format(update.lastUpdated!!),
@@ -59,7 +62,8 @@ fun ColumnScope.UpdatesContent(
                     valueColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.33f),
                     valueStyle = MaterialTheme.typography.titleSmall.copy(
                         fontStyle = FontStyle.Italic
-                    )
+                    ),
+                    mutableMaxWidth = cardWidth
                 )
             }
         }

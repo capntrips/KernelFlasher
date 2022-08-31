@@ -11,6 +11,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -29,22 +31,11 @@ fun ColumnScope.MainContent(
 ) {
     val context = LocalContext.current
     DataCard (title = stringResource(R.string.device)) {
-        DataRow(
-            label = stringResource(R.string.model),
-            value = "${Build.MODEL} (${Build.DEVICE})"
-        )
-        DataRow(
-            label = stringResource(R.string.build_number),
-            value = Build.ID
-        )
-        DataRow(
-            label = stringResource(R.string.kernel_version),
-            value = System.getProperty("os.version")!!
-        )
-        DataRow(
-            label = stringResource(R.string.slot_suffix),
-            value = viewModel.slotSuffix
-        )
+        val cardWidth = remember { mutableStateOf(0) }
+        DataRow(stringResource(R.string.model), "${Build.MODEL} (${Build.DEVICE})", mutableMaxWidth = cardWidth)
+        DataRow(stringResource(R.string.build_number), Build.ID, mutableMaxWidth = cardWidth)
+        DataRow(stringResource(R.string.kernel_version), System.getProperty("os.version")!!, mutableMaxWidth = cardWidth)
+        DataRow(stringResource(R.string.slot_suffix), viewModel.slotSuffix, mutableMaxWidth = cardWidth)
     }
     Spacer(Modifier.height(16.dp))
     SlotCard(
