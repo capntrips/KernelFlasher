@@ -109,7 +109,6 @@ fun ColumnScope.SlotFlashContent(
                     }
                 }
             }
-            // TODO: disable button if no partitions are selected
             OutlinedButton(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -119,7 +118,8 @@ fun ColumnScope.SlotFlashContent(
                     navController.navigate("slot$slotSuffix/backup/backup") {
                         popUpTo("slot{slotSuffix}")
                     }
-                }
+                },
+                enabled = viewModel.backupPartitions.filter { it.value }.isNotEmpty()
             ) {
                 Text(stringResource(R.string.backup))
             }

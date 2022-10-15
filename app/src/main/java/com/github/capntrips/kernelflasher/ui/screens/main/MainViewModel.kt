@@ -34,6 +34,7 @@ class MainViewModel(
     }
     val slotSuffix: String
 
+    val kernelVersion: String
     val slotA: SlotViewModel
     val slotB: SlotViewModel
     val backups: BackupsViewModel
@@ -54,9 +55,10 @@ class MainViewModel(
 
     init {
         PartitionUtil.init(context, fileSystemManager)
-        val bootA = PartitionUtil.findPartitionBlockDevice(context, "boot", "_a")!!
-        val bootB = PartitionUtil.findPartitionBlockDevice(context, "boot", "_b")!!
-
+        val partitionName = if (fileSystemManager.getFile("/dev/block/by-name/init_boot_a").exists()) "init_boot" else "boot"
+        val bootA = PartitionUtil.findPartitionBlockDevice(context, partitionName, "_a")!!
+        val bootB = PartitionUtil.findPartitionBlockDevice(context, partitionName, "_b")!!
+        kernelVersion = Shell.cmd("echo $(uname -r) $(uname -v)").exec().out[0]
         slotSuffix = Shell.cmd("getprop ro.boot.slot_suffix").exec().out[0]
         backups = BackupsViewModel(context, fileSystemManager, navController, _isRefreshing, _backups)
         updates = UpdatesViewModel(context, fileSystemManager, navController, _isRefreshing)

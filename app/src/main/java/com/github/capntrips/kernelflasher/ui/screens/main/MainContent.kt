@@ -34,7 +34,7 @@ fun ColumnScope.MainContent(
         val cardWidth = remember { mutableStateOf(0) }
         DataRow(stringResource(R.string.model), "${Build.MODEL} (${Build.DEVICE})", mutableMaxWidth = cardWidth)
         DataRow(stringResource(R.string.build_number), Build.ID, mutableMaxWidth = cardWidth)
-        DataRow(stringResource(R.string.kernel_version), System.getProperty("os.version")!!, mutableMaxWidth = cardWidth)
+        DataRow(stringResource(R.string.kernel_version), viewModel.kernelVersion, mutableMaxWidth = cardWidth, clickable = true)
         DataRow(stringResource(R.string.slot_suffix), viewModel.slotSuffix, mutableMaxWidth = cardWidth)
     }
     Spacer(Modifier.height(16.dp))

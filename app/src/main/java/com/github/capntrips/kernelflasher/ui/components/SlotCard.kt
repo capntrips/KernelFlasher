@@ -48,7 +48,8 @@ fun SlotCard(
             DataRow(
                 label = stringResource(R.string.kernel_version),
                 value = if (viewModel.kernelVersion != null) viewModel.kernelVersion!! else "",
-                mutableMaxWidth = cardWidth
+                mutableMaxWidth = cardWidth,
+                clickable = true
             )
         }
         if (showDlkm && viewModel.hasVendorDlkm) {

@@ -42,7 +42,7 @@ fun ColumnScope.BackupsContent(
             val cardWidth = remember { mutableStateOf(0) }
             val currentBackup = viewModel.backups.getValue(viewModel.currentBackup!!)
             DataRow(stringResource(R.string.backup_type), currentBackup.type, mutableMaxWidth = cardWidth)
-            DataRow(stringResource(R.string.kernel_version), currentBackup.kernelVersion, mutableMaxWidth = cardWidth)
+            DataRow(stringResource(R.string.kernel_version), currentBackup.kernelVersion, mutableMaxWidth = cardWidth, clickable = true)
             if (currentBackup.type == "raw") {
                 DataRow(
                     label = stringResource(R.string.boot_sha1),
@@ -130,7 +130,7 @@ fun ColumnScope.BackupsContent(
                             mutableMaxWidth = cardWidth
                         )
                     }
-                    DataRow(stringResource(R.string.kernel_version), currentBackup.kernelVersion, mutableMaxWidth = cardWidth)
+                    DataRow(stringResource(R.string.kernel_version), currentBackup.kernelVersion, mutableMaxWidth = cardWidth, clickable = true)
                 }
             }
         } else {

@@ -57,14 +57,15 @@ fun ColumnScope.SlotBackupsContent(
             viewModel = slotViewModel,
             navController = navController,
             isSlotScreen = true,
+            showDlkm = false,
         )
         Spacer(Modifier.height(16.dp))
         if (backupsViewModel.currentBackup != null && backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
             val currentBackup = backupsViewModel.backups.getValue(backupsViewModel.currentBackup!!)
-            DataCard (backupsViewModel.currentBackup!!) {
+            DataCard(backupsViewModel.currentBackup!!) {
                 val cardWidth = remember { mutableStateOf(0) }
                 DataRow(stringResource(R.string.backup_type), currentBackup.type, mutableMaxWidth = cardWidth)
-                DataRow(stringResource(R.string.kernel_version), currentBackup.kernelVersion, mutableMaxWidth = cardWidth)
+                DataRow(stringResource(R.string.kernel_version), currentBackup.kernelVersion, mutableMaxWidth = cardWidth, clickable = true)
                 if (currentBackup.type == "raw") {
                     DataRow(
                         label = stringResource(R.string.boot_sha1),
@@ -153,7 +154,7 @@ fun ColumnScope.SlotBackupsContent(
                             }
                         }
                     ) {
-                        DataRow(stringResource(R.string.kernel_version), backups[id]!!.kernelVersion)
+                        DataRow(stringResource(R.string.kernel_version), backups[id]!!.kernelVersion, clickable = true)
                     }
                 }
             } else {
@@ -208,8 +209,6 @@ fun ColumnScope.SlotBackupsContent(
             )
             Spacer(Modifier.height(5.dp))
         }
-        // TODO: disable button if no partitions are selected
-        // TODO: disable button if any partitions are unavailable
         OutlinedButton(
             modifier = Modifier
                 .fillMaxWidth(),
@@ -219,7 +218,8 @@ fun ColumnScope.SlotBackupsContent(
                 navController.navigate("slot$slotSuffix/backups/${backupsViewModel.currentBackup!!}/restore/restore") {
                     popUpTo("slot{slotSuffix}")
                 }
-            }
+            },
+            enabled = currentBackup.hashes == null || (PartitionUtil.PartitionNames.none { currentBackup.hashes.get(it) != null && backupsViewModel.backupPartitions[it] == null } && backupsViewModel.backupPartitions.filter { it.value }.isNotEmpty())
         ) {
             Text(stringResource(R.string.restore))
         }

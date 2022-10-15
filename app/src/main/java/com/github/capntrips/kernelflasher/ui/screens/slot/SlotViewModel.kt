@@ -241,9 +241,9 @@ class SlotViewModel(
         Shell.cmd("/data/adb/magisk/magiskboot unpack $boot").exec()
         val kernel = File(context.filesDir, "kernel")
         if (kernel.exists()) {
-            val result = Shell.cmd("strings kernel | grep -E -m1 'Linux version.*#' | cut -d\\  -f3").exec().out
+            val result = Shell.cmd("strings kernel | grep -E -m1 'Linux version.*#' | cut -d\\  -f3-").exec().out
             if (result.isNotEmpty()) {
-                kernelVersion = result[0]
+                kernelVersion = result[0].replace("""\(.+\)""".toRegex(), "").replace("""\s+""".toRegex(), " ")
             }
         }
         Shell.cmd("/data/adb/magisk/magiskboot cleanup").exec()
@@ -259,7 +259,7 @@ class SlotViewModel(
         @Suppress("LiftReturnOrAssignment")
         if (partition.exists()) {
             val dmPath = Shell.cmd("readlink -f $partition").exec().out[0]
-            val mounts = Shell.cmd("mount | grep $dmPath").exec().out
+            val mounts = Shell.cmd("mount | grep -w $dmPath").exec().out
             return mounts.isNotEmpty()
         } else {
             return false
