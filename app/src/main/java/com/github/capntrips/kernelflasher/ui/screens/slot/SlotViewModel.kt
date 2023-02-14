@@ -67,6 +67,9 @@ class SlotViewModel(
     private var inInit = true
     private var _error: String? = null
 
+    private val STOCK_MAGISKBOOT = "/data/adb/magisk/magiskboot"
+    private var magiskboot: String = STOCK_MAGISKBOOT
+
     val sha1: String
         get() = _sha1!!
     val flashOutput: List<String>
@@ -89,7 +92,12 @@ class SlotViewModel(
     }
 
     fun refresh(context: Context) {
-        Shell.cmd("/data/adb/magisk/magiskboot unpack $boot").exec()
+        // init magiskboot
+        if (!File(STOCK_MAGISKBOOT).exists()) {
+            magiskboot = context.filesDir.absolutePath + File.separator + "magiskboot"
+        }
+
+        Shell.cmd("$magiskboot unpack $boot").exec()
 
         val ramdisk = File(context.filesDir, "ramdisk.cpio")
 
@@ -108,18 +116,18 @@ class SlotViewModel(
             }
         }
 
-        val magiskboot = fileSystemManager.getFile("/data/adb/magisk/magiskboot")
+        val magiskboot = fileSystemManager.getFile(magiskboot)
         if (magiskboot.exists()) {
             if (ramdisk.exists()) {
-                when (Shell.cmd("/data/adb/magisk/magiskboot cpio ramdisk.cpio test").exec().code) {
-                    0 -> _sha1 = Shell.cmd("/data/adb/magisk/magiskboot sha1 $boot").exec().out.firstOrNull()
-                    1 -> _sha1 = Shell.cmd("/data/adb/magisk/magiskboot cpio ramdisk.cpio sha1").exec().out.firstOrNull()
+                when (Shell.cmd("$magiskboot cpio ramdisk.cpio test").exec().code) {
+                    0 -> _sha1 = Shell.cmd("$magiskboot sha1 $boot").exec().out.firstOrNull()
+                    1 -> _sha1 = Shell.cmd("$magiskboot cpio ramdisk.cpio sha1").exec().out.firstOrNull()
                     else -> log(context, "Invalid boot.img", shouldThrow = true)
                 }
             } else {
                 log(context, "Invalid boot.img", shouldThrow = true)
             }
-            Shell.cmd("/data/adb/magisk/magiskboot cleanup").exec()
+            Shell.cmd("$magiskboot cleanup").exec()
         } else {
             log(context, "magiskboot is missing", shouldThrow = true)
         }
@@ -238,7 +246,7 @@ class SlotViewModel(
 
     @Suppress("FunctionName", "SameParameterValue")
     private fun _getKernel(context: Context) {
-        Shell.cmd("/data/adb/magisk/magiskboot unpack $boot").exec()
+        Shell.cmd("$magiskboot unpack $boot").exec()
         val kernel = File(context.filesDir, "kernel")
         if (kernel.exists()) {
             val result = Shell.cmd("strings kernel | grep -E -m1 'Linux version.*#' | cut -d\\  -f3-").exec().out
@@ -246,7 +254,7 @@ class SlotViewModel(
                 kernelVersion = result[0].replace("""\(.+\)""".toRegex(), "").replace("""\s+""".toRegex(), " ")
             }
         }
-        Shell.cmd("/data/adb/magisk/magiskboot cleanup").exec()
+        Shell.cmd("$magiskboot cleanup").exec()
     }
 
     fun getKernel(context: Context) {
