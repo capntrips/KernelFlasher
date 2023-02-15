@@ -520,7 +520,7 @@ class SlotViewModel(
                     val updateBinary = File(akHome, "update-binary")
                     Shell.cmd("unzip -p \"$zip\" META-INF/com/google/android/update-binary > $akHome/update-binary").exec()
                     if (updateBinary.exists()) {
-                        val result = Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER or Shell.FLAG_REDIRECT_STDERR).build().newJob().add("AKHOME=$akHome \$SHELL $akHome/update-binary 3 1 \"$zip\"").to(flashOutput).exec()
+                        val result = Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER or Shell.FLAG_REDIRECT_STDERR).build().newJob().add("AKHOME=$akHome /system/bin/sh $akHome/update-binary 3 1 \"$zip\"").to(flashOutput).exec()
                         if (result.isSuccess) {
                             log(context, "Kernel flashed successfully")
                             _wasFlashSuccess.value = true
