@@ -153,6 +153,7 @@ class MainActivity : ComponentActivity() {
             Shell.cmd("cd $filesDir").exec()
             copyAsset("lptools_static")
             copyAsset("httools_static")
+            copyAsset("flash_ak3.sh")
         } catch (e: Exception) {
             Log.e(TAG, e.message, e)
             setContent {
