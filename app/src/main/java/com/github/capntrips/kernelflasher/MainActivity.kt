@@ -154,6 +154,7 @@ class MainActivity : ComponentActivity() {
             copyAsset("lptools_static")
             copyAsset("httools_static")
             copyAsset("magiskboot") // version: Magisk 25.2 stable release
+            copyAsset("flash_ak3.sh")
         } catch (e: Exception) {
             Log.e(TAG, e.message, e)
             setContent {

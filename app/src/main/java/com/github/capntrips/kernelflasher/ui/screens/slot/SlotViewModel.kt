@@ -196,10 +196,6 @@ class SlotViewModel(
                 zip.delete()
             }
         }
-        val akHome = File(context.filesDir, "akhome")
-        if (akHome.exists()) {
-            Shell.cmd("rm -r $akHome").exec()
-        }
     }
 
     @Suppress("FunctionName")
@@ -509,29 +505,19 @@ class SlotViewModel(
         if (!isActive) {
             resetSlot()
         }
-        val zip = File(context.filesDir, flashFilename!!)
+        val zip = File(context.filesDir.canonicalPath, flashFilename!!)
         _checkZip(context, zip)
-        val akHome = File(context.filesDir, "akhome")
         try {
             if (zip.exists()) {
-                akHome.mkdir()
                 _wasFlashSuccess.value = false
-                if (akHome.exists()) {
-                    val updateBinary = File(akHome, "update-binary")
-                    Shell.cmd("unzip -p \"$zip\" META-INF/com/google/android/update-binary > $akHome/update-binary").exec()
-                    if (updateBinary.exists()) {
-                        val result = Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER or Shell.FLAG_REDIRECT_STDERR).build().newJob().add("AKHOME=$akHome /system/bin/sh $akHome/update-binary 3 1 \"$zip\"").to(flashOutput).exec()
-                        if (result.isSuccess) {
-                            log(context, "Kernel flashed successfully")
-                            _wasFlashSuccess.value = true
-                        } else {
-                            log(context, "Failed to flash zip", shouldThrow = false)
-                        }
-                    } else {
-                        log(context, "Failed to extract update-binary", shouldThrow = true)
-                    }
+                val files = File(context.filesDir.canonicalPath)
+                val flashScript = File(files, "flash_ak3.sh")
+                val result = Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER or Shell.FLAG_REDIRECT_STDERR).build().newJob().add("F=$files Z=\"$zip\" /system/bin/sh $flashScript").to(flashOutput).exec()
+                if (result.isSuccess) {
+                    log(context, "Kernel flashed successfully")
+                    _wasFlashSuccess.value = true
                 } else {
-                    log(context, "Failed to create temporary folder", shouldThrow = true)
+                    log(context, "Failed to flash zip", shouldThrow = false)
                 }
                 clearTmp(context)
             } else {
