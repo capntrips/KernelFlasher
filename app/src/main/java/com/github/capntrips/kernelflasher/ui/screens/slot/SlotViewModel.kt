@@ -504,8 +504,7 @@ class SlotViewModel(
                 _wasFlashSuccess.value = false
                 val files = File(context.filesDir.canonicalPath)
                 val flashScript = File(files, "flash_ak3.sh")
-                val shell = Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER or Shell.FLAG_REDIRECT_STDERR).build()
-                val result = shell.newJob().to(flashOutput).add("F=$files Z=\"$zip\" /system/bin/sh $flashScript").exec()
+                val result = Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER or Shell.FLAG_REDIRECT_STDERR).build().newJob().add("F=$files Z=\"$zip\" /system/bin/sh $flashScript").to(flashOutput).exec()
                 if (result.isSuccess) {
                     log(context, "Kernel flashed successfully")
                     _wasFlashSuccess.value = true
