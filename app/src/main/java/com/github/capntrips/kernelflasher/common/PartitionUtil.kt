@@ -18,6 +18,7 @@ object PartitionUtil {
         "vbmeta",
         "dtbo",
         "vendor_boot",
+        "vendor_kernel_boot",
         "vendor_dlkm",
         "init_boot",
         "recovery"

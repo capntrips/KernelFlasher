@@ -8,6 +8,7 @@ data class Partitions(
     val vbmeta: String? = null,
     val dtbo: String? = null,
     val vendor_boot: String? = null,
+    val vendor_kernel_boot: String? = null,
     val vendor_dlkm: String? = null,
     val init_boot: String? = null,
     val recovery: String? = null
@@ -19,10 +20,11 @@ data class Partitions(
             val vbmeta by map
             val dtbo by map
             val vendor_boot by map
+            val vendor_kernel_boot by map
             val vendor_dlkm by map
             val init_boot by map
             val recovery by map
-            val partitions = Partitions(boot, vbmeta, dtbo, vendor_boot, vendor_dlkm, init_boot, recovery)
+            val partitions = Partitions(boot, vbmeta, dtbo, vendor_boot, vendor_kernel_boot, vendor_dlkm, init_boot, recovery)
         }.partitions
     }
 
@@ -32,6 +34,7 @@ data class Partitions(
             "vbmeta" -> vbmeta
             "dtbo" -> dtbo
             "vendor_boot" -> vendor_boot
+            "vendor_kernel_boot" -> vendor_kernel_boot
             "vendor_dlkm" -> vendor_dlkm
             "init_boot" -> init_boot
             "recovery" -> recovery
