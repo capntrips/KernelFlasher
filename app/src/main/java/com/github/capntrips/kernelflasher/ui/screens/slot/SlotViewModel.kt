@@ -125,7 +125,8 @@ class SlotViewModel(
                     else -> log(context, "Invalid boot.img", shouldThrow = true)
                 }
             } else {
-                log(context, "Invalid boot.img", shouldThrow = true)
+                // boot.img v4 has no ramdisk!
+                _sha1 = Shell.cmd("$magiskboot sha1 $boot").exec().out.firstOrNull()
             }
             Shell.cmd("$magiskboot cleanup").exec()
         } else {
