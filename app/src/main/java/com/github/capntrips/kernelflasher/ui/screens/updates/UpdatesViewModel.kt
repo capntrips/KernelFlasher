@@ -1,6 +1,5 @@
 package com.github.capntrips.kernelflasher.ui.screens.updates
 
-import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
@@ -33,6 +32,7 @@ import java.util.Locale
 import kotlin.io.path.Path
 import kotlin.io.path.name
 
+@ExperimentalSerializationApi
 class UpdatesViewModel(
     context: Context,
     @Suppress("unused") private val fileSystemManager: FileSystemManager,
@@ -40,7 +40,6 @@ class UpdatesViewModel(
     private val _isRefreshing: MutableState<Boolean>
 ) : ViewModel() {
     companion object {
-        @Suppress("unused")
         const val TAG: String = "KernelFlasher/UpdatesState"
         val lastUpdatedFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
     }
@@ -105,8 +104,6 @@ class UpdatesViewModel(
         changelog = null
     }
 
-    @ExperimentalSerializationApi
-    @Suppress("BlockingMethodInNonBlockingContext")
     fun add(url: String, callback: (updateId: Int) -> Unit) {
         launch {
             val request = Request.Builder()
@@ -128,8 +125,6 @@ class UpdatesViewModel(
         }
     }
 
-    @ExperimentalSerializationApi
-    @Suppress("BlockingMethodInNonBlockingContext")
     fun update() {
         launch {
             val request = Request.Builder()
@@ -158,8 +153,6 @@ class UpdatesViewModel(
         }
     }
 
-    @ExperimentalSerializationApi
-    @Suppress("BlockingMethodInNonBlockingContext")
     fun downloadChangelog(callback: () -> Unit) {
         launch {
             val request = Request.Builder()
@@ -185,9 +178,6 @@ class UpdatesViewModel(
         return resolver.insert(MediaStore.Files.getContentUri("external"), values)
     }
 
-    @SuppressLint("SdCardPath")
-    @ExperimentalSerializationApi
-    @Suppress("BlockingMethodInNonBlockingContext")
     fun downloadKernel(context: Context) {
         launch {
             val remoteUri = Uri.parse(currentUpdate!!.kernelLink)

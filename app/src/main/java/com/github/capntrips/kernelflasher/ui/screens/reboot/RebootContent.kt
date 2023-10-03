@@ -1,5 +1,6 @@
 package com.github.capntrips.kernelflasher.ui.screens.reboot
 
+import android.os.Build
 import android.os.PowerManager
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,11 +15,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.github.capntrips.kernelflasher.R
 
-@Suppress("unused")
+@Suppress("UnusedReceiverParameter")
 @Composable
 fun ColumnScope.RebootContent(
     viewModel: RebootViewModel,
-    @Suppress("UNUSED_PARAMETER") navController: NavController
+    @Suppress("UNUSED_PARAMETER") ignoredNavController: NavController
 ) {
     val context = LocalContext.current
     OutlinedButton(
@@ -29,7 +30,7 @@ fun ColumnScope.RebootContent(
     ) {
         Text(stringResource(R.string.reboot))
     }
-    if (context.getSystemService(PowerManager::class.java)?.isRebootingUserspaceSupported == true) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && context.getSystemService(PowerManager::class.java)?.isRebootingUserspaceSupported == true) {
         OutlinedButton(
             modifier = Modifier
                 .fillMaxWidth(),

@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -85,10 +86,9 @@ fun Modifier.scrollbar(
     width: Dp = 6.dp
 ): Modifier = composed {
     var visibleItemsCountChanged = false
-    var visibleItemsCount by remember { mutableStateOf(state.layoutInfo.visibleItemsInfo.size) }
+    var visibleItemsCount by remember { mutableIntStateOf(state.layoutInfo.visibleItemsInfo.size) }
     if (visibleItemsCount != state.layoutInfo.visibleItemsInfo.size) {
         visibleItemsCountChanged = true
-        @Suppress("UNUSED_VALUE")
         visibleItemsCount = state.layoutInfo.visibleItemsInfo.size
     }
 

@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class RebootViewModel(
-    @Suppress("unused", "UNUSED_PARAMETER") context: Context,
+    @Suppress("UNUSED_PARAMETER") ignoredContext: Context,
     @Suppress("unused") private val fileSystemManager: FileSystemManager,
     private val navController: NavController,
     private val _isRefreshing: MutableState<Boolean>

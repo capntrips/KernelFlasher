@@ -7,10 +7,10 @@ data class Partitions(
     val boot: String? = null,
     val vbmeta: String? = null,
     val dtbo: String? = null,
-    val vendor_boot: String? = null,
-    val vendor_kernel_boot: String? = null,
-    val vendor_dlkm: String? = null,
-    val init_boot: String? = null,
+    @Suppress("PropertyName") val vendor_boot: String? = null,
+    @Suppress("PropertyName") val vendor_kernel_boot: String? = null,
+    @Suppress("PropertyName") val vendor_dlkm: String? = null,
+    @Suppress("PropertyName") val init_boot: String? = null,
     val recovery: String? = null
 ) {
     companion object {

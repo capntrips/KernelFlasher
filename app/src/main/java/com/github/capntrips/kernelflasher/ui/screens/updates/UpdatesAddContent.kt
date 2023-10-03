@@ -22,9 +22,9 @@ import androidx.navigation.NavController
 import com.github.capntrips.kernelflasher.R
 import kotlinx.serialization.ExperimentalSerializationApi
 
-@Suppress("unused")
-@ExperimentalSerializationApi
+@Suppress("UnusedReceiverParameter")
 @ExperimentalMaterial3Api
+@ExperimentalSerializationApi
 @Composable
 fun ColumnScope.UpdatesAddContent(
     viewModel: UpdatesViewModel,

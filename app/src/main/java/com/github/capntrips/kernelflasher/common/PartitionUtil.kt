@@ -6,7 +6,6 @@ import com.github.capntrips.kernelflasher.common.types.partitions.FstabEntry
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.nio.ExtendedFile
 import com.topjohnwu.superuser.nio.FileSystemManager
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.security.DigestOutputStream
@@ -27,13 +26,13 @@ object PartitionUtil {
     val AvailablePartitions = mutableListOf<String>()
 
     private var fileSystemManager: FileSystemManager? = null
-    private var bootDevice: File? = null
+    private var bootParent: File? = null
 
     fun init(context: Context, fileSystemManager: FileSystemManager) {
         this.fileSystemManager = fileSystemManager
         val fstabEntry = findPartitionFstabEntry(context, "boot")
         if (fstabEntry != null) {
-            bootDevice = File(fstabEntry.blkDevice).parentFile
+            bootParent = File(fstabEntry.blkDevice).parentFile
         }
         val activeSlotSuffix = Shell.cmd("getprop ro.boot.slot_suffix").exec().out[0]
         for (partitionName in PartitionNames) {
@@ -67,10 +66,13 @@ object PartitionUtil {
                 }
             } else {
                 blockDevice = fileSystemManager!!.getFile(fstabEntry.blkDevice)
+                if (blockDevice.name != "$partitionName$slotSuffix") {
+                    blockDevice = fileSystemManager!!.getFile(blockDevice.parentFile, "$partitionName$slotSuffix")
+                }
             }
         }
-        if (blockDevice == null) {
-            val siblingDevice = if (bootDevice != null) fileSystemManager!!.getFile(bootDevice!!, partitionName) else null
+        if (blockDevice == null || !blockDevice.exists()) {
+            val siblingDevice = if (bootParent != null) fileSystemManager!!.getFile(bootParent!!, "$partitionName$slotSuffix") else null
             val physicalDevice = fileSystemManager!!.getFile("/dev/block/by-name/$partitionName$slotSuffix")
             val logicalDevice = fileSystemManager!!.getFile("/dev/block/mapper/$partitionName$slotSuffix")
             if (siblingDevice?.exists() == true) {

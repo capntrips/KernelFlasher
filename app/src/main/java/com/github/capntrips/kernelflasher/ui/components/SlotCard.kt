@@ -4,7 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -34,7 +34,7 @@ fun SlotCard(
             }
         }
     ) {
-        val cardWidth = remember { mutableStateOf(0) }
+        val cardWidth = remember { mutableIntStateOf(0) }
         DataRow(
             label = stringResource(R.string.boot_sha1),
             value = viewModel.sha1.substring(0, 8),

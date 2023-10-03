@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,8 +35,9 @@ import com.github.capntrips.kernelflasher.ui.components.FlashList
 import com.github.capntrips.kernelflasher.ui.components.SlotCard
 
 @ExperimentalAnimationApi
-@ExperimentalUnitApi
+@ExperimentalMaterialApi
 @ExperimentalMaterial3Api
+@ExperimentalUnitApi
 @Composable
 fun ColumnScope.SlotFlashContent(
     viewModel: SlotViewModel,

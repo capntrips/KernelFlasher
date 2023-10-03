@@ -12,7 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,7 +39,7 @@ fun ColumnScope.BackupsContent(
     val context = LocalContext.current
     if (viewModel.currentBackup != null && viewModel.backups.containsKey(viewModel.currentBackup)) {
         DataCard (viewModel.currentBackup!!) {
-            val cardWidth = remember { mutableStateOf(0) }
+            val cardWidth = remember { mutableIntStateOf(0) }
             val currentBackup = viewModel.backups.getValue(viewModel.currentBackup!!)
             DataRow(stringResource(R.string.backup_type), currentBackup.type, mutableMaxWidth = cardWidth)
             DataRow(stringResource(R.string.kernel_version), currentBackup.kernelVersion, mutableMaxWidth = cardWidth, clickable = true)
@@ -54,7 +54,7 @@ fun ColumnScope.BackupsContent(
                     mutableMaxWidth = cardWidth
                 )
                 if (currentBackup.hashes != null) {
-                    val hashWidth = remember { mutableStateOf(0) }
+                    val hashWidth = remember { mutableIntStateOf(0) }
                     DataSet(stringResource(R.string.hashes)) {
                         for (partitionName in PartitionUtil.PartitionNames) {
                             val hash = currentBackup.hashes.get(partitionName)
@@ -118,7 +118,7 @@ fun ColumnScope.BackupsContent(
                         }
                     }
                 ) {
-                    val cardWidth = remember { mutableStateOf(0) }
+                    val cardWidth = remember { mutableIntStateOf(0) }
                     if (currentBackup.type == "raw") {
                         DataRow(
                             label = stringResource(R.string.boot_sha1),

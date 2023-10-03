@@ -12,7 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -49,7 +49,7 @@ fun ColumnScope.UpdatesContent(
                     }
                 }
             ) {
-                val cardWidth = remember { mutableStateOf(0) }
+                val cardWidth = remember { mutableIntStateOf(0) }
                 DataRow(stringResource(R.string.version), update.kernelVersion, mutableMaxWidth = cardWidth)
                 DataRow(stringResource(R.string.date_released), DateSerializer.formatter.format(update.kernelDate), mutableMaxWidth = cardWidth)
                 DataRow(

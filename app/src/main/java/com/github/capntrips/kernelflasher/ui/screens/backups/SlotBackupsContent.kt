@@ -16,7 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,8 +41,8 @@ import com.github.capntrips.kernelflasher.ui.components.SlotCard
 import com.github.capntrips.kernelflasher.ui.components.ViewButton
 import com.github.capntrips.kernelflasher.ui.screens.slot.SlotViewModel
 
-@ExperimentalUnitApi
 @ExperimentalMaterial3Api
+@ExperimentalUnitApi
 @Composable
 fun ColumnScope.SlotBackupsContent(
     slotViewModel: SlotViewModel,
@@ -63,7 +63,7 @@ fun ColumnScope.SlotBackupsContent(
         if (backupsViewModel.currentBackup != null && backupsViewModel.backups.containsKey(backupsViewModel.currentBackup)) {
             val currentBackup = backupsViewModel.backups.getValue(backupsViewModel.currentBackup!!)
             DataCard(backupsViewModel.currentBackup!!) {
-                val cardWidth = remember { mutableStateOf(0) }
+                val cardWidth = remember { mutableIntStateOf(0) }
                 DataRow(stringResource(R.string.backup_type), currentBackup.type, mutableMaxWidth = cardWidth)
                 DataRow(stringResource(R.string.kernel_version), currentBackup.kernelVersion, mutableMaxWidth = cardWidth, clickable = true)
                 if (currentBackup.type == "raw") {
@@ -77,7 +77,7 @@ fun ColumnScope.SlotBackupsContent(
                         mutableMaxWidth = cardWidth
                     )
                     if (currentBackup.hashes != null) {
-                        val hashWidth = remember { mutableStateOf(0) }
+                        val hashWidth = remember { mutableIntStateOf(0) }
                         DataSet(stringResource(R.string.hashes)) {
                             for (partitionName in PartitionUtil.PartitionNames) {
                                 val hash = currentBackup.hashes.get(partitionName)

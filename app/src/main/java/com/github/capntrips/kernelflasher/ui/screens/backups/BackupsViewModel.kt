@@ -24,7 +24,6 @@ import com.topjohnwu.superuser.nio.FileSystemManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -61,7 +60,6 @@ class BackupsViewModel(
     var wasRestored: Boolean? = null
     private val _backupPartitions: SnapshotStateMap<String, Boolean> = mutableStateMapOf()
     private val hashAlgorithm: String = "SHA-256"
-    @Suppress("PropertyName")
     @Deprecated("Backup migration will be removed in the first stable release")
     private var _needsMigration: MutableState<Boolean> = mutableStateOf(false)
 
@@ -73,7 +71,6 @@ class BackupsViewModel(
         get() = _isRefreshing.value
     val backups: Map<String, Backup>
         get() = _backups
-    @Suppress("DeprecatedCallableAddReplaceWith")
     @Deprecated("Backup migration will be removed in the first stable release")
     val needsMigration: Boolean
         get() = _needsMigration.value
@@ -281,14 +278,12 @@ class BackupsViewModel(
                         propFile.delete()
 
                         val dest = backupsDir.getChildFile(child.name)
-                        @Suppress("BlockingMethodInNonBlockingContext")
                         Shell.cmd("mv $child $dest").exec()
                         if (!dest.exists()) {
                             throw Error("Too slow")
                         }
                         val jsonFile = dest.getChildFile("backup.json")
                         val backup = Backup(name, type, kernelVersion, bootSha1, filename)
-                        @Suppress("BlockingMethodInNonBlockingContext")
                         jsonFile.outputStream().use { it.write(indentedJson.encodeToString(backup).toByteArray(Charsets.UTF_8)) }
                         _backups[name] = backup
                     }

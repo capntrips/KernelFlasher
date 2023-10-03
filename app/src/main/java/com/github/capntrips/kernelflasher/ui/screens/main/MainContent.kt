@@ -11,7 +11,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -31,7 +31,7 @@ fun ColumnScope.MainContent(
 ) {
     val context = LocalContext.current
     DataCard (title = stringResource(R.string.device)) {
-        val cardWidth = remember { mutableStateOf(0) }
+        val cardWidth = remember { mutableIntStateOf(0) }
         DataRow(stringResource(R.string.model), "${Build.MODEL} (${Build.DEVICE})", mutableMaxWidth = cardWidth)
         DataRow(stringResource(R.string.build_number), Build.ID, mutableMaxWidth = cardWidth)
         DataRow(stringResource(R.string.kernel_version), viewModel.kernelVersion, mutableMaxWidth = cardWidth, clickable = true)

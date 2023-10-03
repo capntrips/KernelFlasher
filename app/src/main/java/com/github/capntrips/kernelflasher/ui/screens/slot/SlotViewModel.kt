@@ -38,7 +38,7 @@ import java.util.zip.ZipFile
 
 class SlotViewModel(
     context: Context,
-    @Suppress("unused") private val fileSystemManager: FileSystemManager,
+    private val fileSystemManager: FileSystemManager,
     private val navController: NavController,
     private val _isRefreshing: MutableState<Boolean>,
     val isActive: Boolean,
@@ -50,13 +50,11 @@ class SlotViewModel(
         const val TAG: String = "KernelFlasher/SlotState"
     }
 
-    @Suppress("PropertyName")
     private var _sha1: String? = null
     var kernelVersion: String? = null
     var hasVendorDlkm: Boolean = false
     var isVendorDlkmMapped: Boolean = false
     var isVendorDlkmMounted: Boolean = false
-    @Suppress("PropertyName")
     private val _flashOutput: SnapshotStateList<String> = mutableStateListOf()
     private val _wasFlashSuccess: MutableState<Boolean?> = mutableStateOf(null)
     private val _backupPartitions: SnapshotStateMap<String, Boolean> = mutableStateMapOf()
@@ -67,6 +65,7 @@ class SlotViewModel(
     private var inInit = true
     private var _error: String? = null
 
+    @Suppress("PrivatePropertyName")
     private val STOCK_MAGISKBOOT = "/data/adb/magisk/magiskboot"
     private var magiskboot: String = STOCK_MAGISKBOOT
 
@@ -175,6 +174,7 @@ class SlotViewModel(
         }
     }
 
+    @Suppress("SameParameterValue")
     private fun uiPrint(message: String) {
         viewModelScope.launch(Dispatchers.Main) {
             _flashOutput.add("ui_print $message")
@@ -392,7 +392,6 @@ class SlotViewModel(
             val jsonFile = backupDir.getChildFile("backup.json")
             val backup = Backup(now, "raw", currentKernelVersion!!, sha1, null, hashes, hashAlgorithm)
             val indentedJson = Json { prettyPrint = true }
-            @Suppress("BlockingMethodInNonBlockingContext")
             jsonFile.outputStream().use { it.write(indentedJson.encodeToString(backup).toByteArray(Charsets.UTF_8)) }
             _backups[now] = backup
             addMessage("Backup $now saved")
@@ -402,7 +401,6 @@ class SlotViewModel(
 
     fun backupZip(context: Context, callback: () -> Unit) {
         launch {
-            @Suppress("BlockingMethodInNonBlockingContext")
             val source = context.contentResolver.openInputStream(flashUri!!)
             if (source != null) {
                 _getKernel(context)
@@ -411,11 +409,9 @@ class SlotViewModel(
                 val jsonFile = backupDir.getChildFile("backup.json")
                 val backup = Backup(now, "ak3", kernelVersion!!, null, flashFilename)
                 val indentedJson = Json { prettyPrint = true }
-                @Suppress("BlockingMethodInNonBlockingContext")
                 jsonFile.outputStream().use { it.write(indentedJson.encodeToString(backup).toByteArray(Charsets.UTF_8)) }
                 val destination = backupDir.getChildFile(flashFilename!!)
                 source.use { inputStream ->
-                    @Suppress("BlockingMethodInNonBlockingContext")
                     destination.outputStream().use { outputStream ->
                         inputStream.copyTo(outputStream)
                     }
@@ -473,9 +469,7 @@ class SlotViewModel(
         }
         val source = backupDir.getChildFile(flashFilename!!)
         val zip = File(context.filesDir, flashFilename!!)
-        @Suppress("BlockingMethodInNonBlockingContext")
         source.newInputStream().use { inputStream ->
-            @Suppress("BlockingMethodInNonBlockingContext")
             zip.outputStream().use { outputStream ->
                 inputStream.copyTo(outputStream)
             }
@@ -490,7 +484,6 @@ class SlotViewModel(
             val name = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
             return@use cursor.getString(name)
         } ?: "ak3.zip"
-        @Suppress("BlockingMethodInNonBlockingContext")
         val source = context.contentResolver.openInputStream(uri)
         val file = File(context.filesDir, flashFilename!!)
         source.use { inputStream ->

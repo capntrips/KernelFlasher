@@ -21,9 +21,9 @@ import androidx.navigation.NavController
 import com.github.capntrips.kernelflasher.R
 import com.github.capntrips.kernelflasher.ui.components.SlotCard
 
-@ExperimentalUnitApi
 @ExperimentalAnimationApi
 @ExperimentalMaterial3Api
+@ExperimentalUnitApi
 @Composable
 fun ColumnScope.SlotContent(
     viewModel: SlotViewModel,
