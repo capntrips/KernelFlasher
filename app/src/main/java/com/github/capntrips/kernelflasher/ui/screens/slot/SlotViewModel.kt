@@ -99,6 +99,7 @@ class SlotViewModel(
         Shell.cmd("$magiskboot unpack $boot").exec()
 
         val ramdisk = File(context.filesDir, "ramdisk.cpio")
+        val kernel = File(context.filesDir, "kernel")
 
         var vendorDlkm = PartitionUtil.findPartitionBlockDevice(context, "vendor_dlkm", slotSuffix)
         hasVendorDlkm = vendorDlkm != null
@@ -121,10 +122,12 @@ class SlotViewModel(
                 when (Shell.cmd("$magiskboot cpio ramdisk.cpio test").exec().code) {
                     0 -> _sha1 = Shell.cmd("$magiskboot sha1 $boot").exec().out.firstOrNull()
                     1 -> _sha1 = Shell.cmd("$magiskboot cpio ramdisk.cpio sha1").exec().out.firstOrNull()
-                    else -> log(context, "Invalid boot.img", shouldThrow = true)
+                    else -> log(context, "Invalid ramdisk in boot.img", shouldThrow = true)
                 }
+            } else if (kernel.exists()) {
+                _sha1 = Shell.cmd("$magiskboot sha1 $boot").exec().out.firstOrNull()
             } else {
-                log(context, "Invalid boot.img", shouldThrow = true)
+                log(context, "Invalid boot.img, no ramdisk or kernel found", shouldThrow = true)
             }
             Shell.cmd("$magiskboot cleanup").exec()
         } else {
