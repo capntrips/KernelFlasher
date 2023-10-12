@@ -3,6 +3,7 @@ package com.github.capntrips.kernelflasher
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
@@ -98,6 +99,19 @@ class MainActivity : ComponentActivity() {
         Shell.cmd("chmod +x $dest").exec()
     }
 
+    private fun copyNativeBinary(context: Context, filename: String) {
+        val binary = File(context.applicationInfo.nativeLibraryDir, "lib$filename.so")
+        println("binary: $binary")
+        val dest = File(filesDir, filename)
+        println("dest: $dest")
+        binary.inputStream().use { inputStream ->
+            dest.outputStream().use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
+        Shell.cmd("chmod +x $dest").exec()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         val splashScreen = installSplashScreen()
@@ -153,9 +167,9 @@ class MainActivity : ComponentActivity() {
     fun onAidlConnected(fileSystemManager: FileSystemManager) {
         try {
             Shell.cmd("cd $filesDir").exec()
-            copyAsset("lptools_static")
-            copyAsset("httools_static")
-            copyAsset("magiskboot") // version: Magisk 25.2 stable release
+            copyNativeBinary(this, "lptools_static") // v20220825
+            copyNativeBinary(this, "httools_static") // v3.2.0
+            copyNativeBinary(this, "magiskboot") // v25.2
             copyAsset("flash_ak3.sh")
         } catch (e: Exception) {
             Log.e(TAG, e.message, e)

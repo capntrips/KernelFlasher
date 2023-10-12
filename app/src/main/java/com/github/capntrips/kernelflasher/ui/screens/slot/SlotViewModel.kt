@@ -65,10 +65,6 @@ class SlotViewModel(
     private var inInit = true
     private var _error: String? = null
 
-    @Suppress("PrivatePropertyName")
-    private val STOCK_MAGISKBOOT = "/data/adb/magisk/magiskboot"
-    private var magiskboot: String = STOCK_MAGISKBOOT
-
     val sha1: String
         get() = _sha1!!
     val flashOutput: List<String>
@@ -91,11 +87,7 @@ class SlotViewModel(
     }
 
     fun refresh(context: Context) {
-        // init magiskboot
-        if (!File(STOCK_MAGISKBOOT).exists()) {
-            magiskboot = context.filesDir.absolutePath + File.separator + "magiskboot"
-        }
-
+        val magiskboot = File(context.filesDir, "magiskboot")
         Shell.cmd("$magiskboot unpack $boot").exec()
 
         val ramdisk = File(context.filesDir, "ramdisk.cpio")
@@ -116,23 +108,18 @@ class SlotViewModel(
             }
         }
 
-        val magiskboot = fileSystemManager.getFile(magiskboot)
-        if (magiskboot.exists()) {
-            if (ramdisk.exists()) {
-                when (Shell.cmd("$magiskboot cpio ramdisk.cpio test").exec().code) {
-                    0 -> _sha1 = Shell.cmd("$magiskboot sha1 $boot").exec().out.firstOrNull()
-                    1 -> _sha1 = Shell.cmd("$magiskboot cpio ramdisk.cpio sha1").exec().out.firstOrNull()
-                    else -> log(context, "Invalid ramdisk in boot.img", shouldThrow = true)
-                }
-            } else if (kernel.exists()) {
-                _sha1 = Shell.cmd("$magiskboot sha1 $boot").exec().out.firstOrNull()
-            } else {
-                log(context, "Invalid boot.img, no ramdisk or kernel found", shouldThrow = true)
+        if (ramdisk.exists()) {
+            when (Shell.cmd("$magiskboot cpio ramdisk.cpio test").exec().code) {
+                0 -> _sha1 = Shell.cmd("$magiskboot sha1 $boot").exec().out.firstOrNull()
+                1 -> _sha1 = Shell.cmd("$magiskboot cpio ramdisk.cpio sha1").exec().out.firstOrNull()
+                else -> log(context, "Invalid ramdisk in boot.img", shouldThrow = true)
             }
-            Shell.cmd("$magiskboot cleanup").exec()
+        } else if (kernel.exists()) {
+            _sha1 = Shell.cmd("$magiskboot sha1 $boot").exec().out.firstOrNull()
         } else {
-            log(context, "magiskboot is missing", shouldThrow = true)
+            log(context, "Invalid boot.img, no ramdisk or kernel found", shouldThrow = true)
         }
+        Shell.cmd("$magiskboot cleanup").exec()
 
         PartitionUtil.AvailablePartitions.forEach { partitionName ->
             _backupPartitions[partitionName] = true
@@ -245,6 +232,7 @@ class SlotViewModel(
 
     @Suppress("FunctionName", "SameParameterValue")
     private fun _getKernel(context: Context) {
+        val magiskboot = File(context.filesDir, "magiskboot")
         Shell.cmd("$magiskboot unpack $boot").exec()
         val kernel = File(context.filesDir, "kernel")
         if (kernel.exists()) {
