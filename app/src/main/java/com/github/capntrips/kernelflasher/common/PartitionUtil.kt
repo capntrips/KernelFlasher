@@ -14,13 +14,14 @@ import java.security.MessageDigest
 object PartitionUtil {
     val PartitionNames = listOf(
         "boot",
-        "vbmeta",
         "dtbo",
-        "vendor_boot",
-        "vendor_kernel_boot",
-        "vendor_dlkm",
         "init_boot",
-        "recovery"
+        "recovery",
+        "system_dlkm",
+        "vbmeta",
+        "vendor_boot",
+        "vendor_dlkm",
+        "vendor_kernel_boot"
     )
 
     val AvailablePartitions = mutableListOf<String>()
