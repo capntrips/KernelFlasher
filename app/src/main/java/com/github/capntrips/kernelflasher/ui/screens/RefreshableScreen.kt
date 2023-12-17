@@ -38,9 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.github.capntrips.kernelflasher.R
 import com.github.capntrips.kernelflasher.ui.screens.main.MainViewModel
+import kotlinx.serialization.ExperimentalSerializationApi
 
 @ExperimentalMaterialApi
 @ExperimentalMaterial3Api
+@ExperimentalSerializationApi
 @Composable
 fun RefreshableScreen(
     viewModel: MainViewModel,

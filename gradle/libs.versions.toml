@@ -1,28 +1,25 @@
 [versions]
-kotlin = "1.9.10"
-compose-compiler = "1.5.3"
+kotlin = "1.9.21"
+compose-compiler = "1.5.6"
 
-androidx-activity-compose = "1.7.2"
+androidx-activity-compose = "1.8.2"
 androidx-appcompat = "1.6.1"
-androidx-compose = "1.5.2"
+androidx-compose = "1.5.4"
 androidx-compose-material3 = "1.1.2"
 androidx-core-ktx = "1.12.0"
 androidx-core-splashscreen = "1.0.1"
-androidx-fragment = "1.6.1"
 androidx-lifecycle = "2.6.2"
-androidx-navigation-compose = "2.7.3"
-androidx-room = "2.5.2"
+androidx-navigation-compose = "2.7.6"
+androidx-room = "2.6.1"
 kotlinx-serialization-json = "1.5.1"
 libsu = "5.2.1"
-material = "1.9.0"
+material = "1.11.0"
 okhttp = "4.11.0"
 
-android-application = "8.1.2"
-devtools-ksp = "1.9.10-1.0.13"
+android-application = "8.2.0"
+devtools-ksp = "1.9.21-1.0.16"
 
 [libraries]
-compose-compiler = { module = "androidx.compose.compiler:compiler", version.ref = "compose-compiler" }
-
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activity-compose" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "androidx-appcompat" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "androidx-compose" }

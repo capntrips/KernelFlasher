@@ -20,10 +20,12 @@ import com.topjohnwu.superuser.nio.FileSystemManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.ExperimentalSerializationApi
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+@ExperimentalSerializationApi
 class MainViewModel(
     context: Context,
     fileSystemManager: FileSystemManager,
@@ -55,19 +57,20 @@ class MainViewModel(
 
     init {
         PartitionUtil.init(context, fileSystemManager)
-        val partitionName = if (fileSystemManager.getFile("/dev/block/by-name/init_boot_a").exists()) "init_boot" else "boot"
-        val bootA = PartitionUtil.findPartitionBlockDevice(context, partitionName, "_a")!!
-        val bootB = PartitionUtil.findPartitionBlockDevice(context, partitionName, "_b")!!
+        val bootA = PartitionUtil.findPartitionBlockDevice(context, "boot", "_a")!!
+        val bootB = PartitionUtil.findPartitionBlockDevice(context, "boot", "_b")!!
+        val initBootA = PartitionUtil.findPartitionBlockDevice(context, "init_boot", "_a")
+        val initBootB = PartitionUtil.findPartitionBlockDevice(context, "init_boot", "_b")
         kernelVersion = Shell.cmd("echo $(uname -r) $(uname -v)").exec().out[0]
         slotSuffix = Shell.cmd("getprop ro.boot.slot_suffix").exec().out[0]
         backups = BackupsViewModel(context, fileSystemManager, navController, _isRefreshing, _backups)
         updates = UpdatesViewModel(context, fileSystemManager, navController, _isRefreshing)
         reboot = RebootViewModel(context, fileSystemManager, navController, _isRefreshing)
-        slotA = SlotViewModel(context, fileSystemManager, navController, _isRefreshing, slotSuffix == "_a", "_a", bootA, _backups)
+        slotA = SlotViewModel(context, fileSystemManager, navController, _isRefreshing, slotSuffix == "_a", "_a", bootA, initBootA, _backups)
         if (slotA.hasError) {
             _error = slotA.error
         }
-        slotB = SlotViewModel(context, fileSystemManager, navController, _isRefreshing, slotSuffix == "_b", "_b", bootB, _backups)
+        slotB = SlotViewModel(context, fileSystemManager, navController, _isRefreshing, slotSuffix == "_b", "_b", bootB, initBootB, _backups)
         if (slotB.hasError) {
             _error = slotB.error
         }

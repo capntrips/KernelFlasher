@@ -44,6 +44,7 @@ class SlotViewModel(
     val isActive: Boolean,
     val slotSuffix: String,
     private val boot: File,
+    private val initBoot: File?,
     private val _backups: MutableMap<String, Backup>
 ) : ViewModel() {
     companion object {
@@ -89,6 +90,9 @@ class SlotViewModel(
     fun refresh(context: Context) {
         val magiskboot = File(context.filesDir, "magiskboot")
         Shell.cmd("$magiskboot unpack $boot").exec()
+        if (initBoot != null) {
+            Shell.cmd("$magiskboot unpack $initBoot").exec()
+        }
 
         val ramdisk = File(context.filesDir, "ramdisk.cpio")
         val kernel = File(context.filesDir, "kernel")
@@ -234,6 +238,9 @@ class SlotViewModel(
     private fun _getKernel(context: Context) {
         val magiskboot = File(context.filesDir, "magiskboot")
         Shell.cmd("$magiskboot unpack $boot").exec()
+        if (initBoot != null) {
+            Shell.cmd("$magiskboot unpack $initBoot").exec()
+        }
         val kernel = File(context.filesDir, "kernel")
         if (kernel.exists()) {
             val result = Shell.cmd("strings kernel | grep -E -m1 'Linux version.*#' | cut -d\\  -f3-").exec().out
