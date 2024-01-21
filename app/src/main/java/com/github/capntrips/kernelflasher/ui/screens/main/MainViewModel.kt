@@ -67,11 +67,11 @@ class MainViewModel(
         updates = UpdatesViewModel(context, fileSystemManager, navController, _isRefreshing)
         reboot = RebootViewModel(context, fileSystemManager, navController, _isRefreshing)
         slotA = SlotViewModel(context, fileSystemManager, navController, _isRefreshing, slotSuffix == "_a", "_a", bootA, initBootA, _backups)
-        if (slotA.hasError) {
+        if (slotA.hasError && slotSuffix == "_a") {
             _error = slotA.error
         }
         slotB = SlotViewModel(context, fileSystemManager, navController, _isRefreshing, slotSuffix == "_b", "_b", bootB, initBootB, _backups)
-        if (slotB.hasError) {
+        if (slotB.hasError && slotSuffix == "_b") {
             _error = slotB.error
         }
 

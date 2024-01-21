@@ -66,6 +66,7 @@ class MainActivity : ComponentActivity() {
 
     private var rootServiceConnected: Boolean = false
     private var viewModel: MainViewModel? = null
+    private var isAb: Boolean? = null
     private lateinit var mainListener: MainListener
     var isAwaitingResult = false
 
@@ -140,7 +141,7 @@ class MainActivity : ComponentActivity() {
         content.viewTreeObserver.addOnPreDrawListener(
             object : ViewTreeObserver.OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
-                    return if (viewModel?.isRefreshing == false || Shell.isAppGrantedRoot() == false) {
+                    return if (viewModel?.isRefreshing == false || isAb == false || Shell.isAppGrantedRoot() == false) {
                         content.viewTreeObserver.removeOnPreDrawListener(this)
                         true
                     } else {
@@ -152,8 +153,17 @@ class MainActivity : ComponentActivity() {
 
         Shell.getShell()
         if (Shell.isAppGrantedRoot()!!) {
-            val intent = Intent(this, FilesystemService::class.java)
-            RootService.bind(intent, AidlConnection())
+            isAb = Shell.cmd("getprop ro.build.ab_update").exec().out[0] == "true"
+            if (isAb!!) {
+                val intent = Intent(this, FilesystemService::class.java)
+                RootService.bind(intent, AidlConnection())
+            } else {
+                setContent {
+                    KernelFlasherTheme {
+                        ErrorScreen(stringResource(R.string.non_ab_unsupported))
+                    }
+                }
+            }
         } else {
             setContent {
                 KernelFlasherTheme {
