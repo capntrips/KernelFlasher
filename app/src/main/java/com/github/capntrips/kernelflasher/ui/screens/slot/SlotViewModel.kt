@@ -88,6 +88,10 @@ class SlotViewModel(
     }
 
     fun refresh(context: Context) {
+        if (!isActive) {
+            inInit = true
+        }
+
         val magiskboot = File(context.filesDir, "magiskboot")
         Shell.cmd("$magiskboot unpack $boot").exec()
         if (initBoot != null) {
