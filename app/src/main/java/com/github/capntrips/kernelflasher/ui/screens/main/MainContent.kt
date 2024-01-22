@@ -22,8 +22,10 @@ import com.github.capntrips.kernelflasher.R
 import com.github.capntrips.kernelflasher.ui.components.DataCard
 import com.github.capntrips.kernelflasher.ui.components.DataRow
 import com.github.capntrips.kernelflasher.ui.components.SlotCard
+import kotlinx.serialization.ExperimentalSerializationApi
 
 @ExperimentalMaterial3Api
+@ExperimentalSerializationApi
 @Composable
 fun ColumnScope.MainContent(
     viewModel: MainViewModel,
@@ -35,20 +37,24 @@ fun ColumnScope.MainContent(
         DataRow(stringResource(R.string.model), "${Build.MODEL} (${Build.DEVICE})", mutableMaxWidth = cardWidth)
         DataRow(stringResource(R.string.build_number), Build.ID, mutableMaxWidth = cardWidth)
         DataRow(stringResource(R.string.kernel_version), viewModel.kernelVersion, mutableMaxWidth = cardWidth, clickable = true)
-        DataRow(stringResource(R.string.slot_suffix), viewModel.slotSuffix, mutableMaxWidth = cardWidth)
+        if (viewModel.isAb) {
+            DataRow(stringResource(R.string.slot_suffix), viewModel.slotSuffix, mutableMaxWidth = cardWidth)
+        }
     }
     Spacer(Modifier.height(16.dp))
     SlotCard(
-        title = stringResource(R.string.slot_a),
+        title = stringResource(if (viewModel.isAb) R.string.slot_a else R.string.slot),
         viewModel = viewModel.slotA,
         navController = navController
     )
-    Spacer(Modifier.height(16.dp))
-    SlotCard(
-        title = stringResource(R.string.slot_b),
-        viewModel = viewModel.slotB,
-        navController = navController
-    )
+    if (viewModel.isAb) {
+        Spacer(Modifier.height(16.dp))
+        SlotCard(
+            title = stringResource(R.string.slot_b),
+            viewModel = viewModel.slotB!!,
+            navController = navController
+        )
+    }
     Spacer(Modifier.height(16.dp))
     AnimatedVisibility(!viewModel.isRefreshing) {
         OutlinedButton(

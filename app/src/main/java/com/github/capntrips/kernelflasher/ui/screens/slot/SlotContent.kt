@@ -32,7 +32,7 @@ fun ColumnScope.SlotContent(
 ) {
     val context = LocalContext.current
     SlotCard(
-        title = stringResource(if (slotSuffix == "_a") R.string.slot_a else R.string.slot_b),
+        title = stringResource(if (slotSuffix == "_a") R.string.slot_a else if (slotSuffix == "_b") R.string.slot_b else R.string.slot),
         viewModel = viewModel,
         navController = navController,
         isSlotScreen = true
