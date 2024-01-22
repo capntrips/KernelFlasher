@@ -51,9 +51,9 @@ fun ColumnScope.SlotBackupsContent(
     navController: NavController
 ) {
     val context = LocalContext.current
-    if (!navController.currentDestination!!.route!!.startsWith("slot{slotSuffix}/backups/{backupId}/restore")) {
+    if (!navController.currentDestination!!.route!!.contains("/backups/{backupId}/restore")) {
         SlotCard(
-            title = stringResource(if (slotSuffix == "_a") R.string.slot_a else R.string.slot_b),
+            title = stringResource(if (slotSuffix == "_a") R.string.slot_a else if (slotSuffix == "_b") R.string.slot_b else R.string.slot),
             viewModel = slotViewModel,
             navController = navController,
             isSlotScreen = true,
@@ -120,7 +120,7 @@ fun ColumnScope.SlotBackupsContent(
                                 onClick = {
                                     slotViewModel.flashAk3(context, backupsViewModel.currentBackup!!, currentBackup.filename!!)
                                     navController.navigate("slot$slotSuffix/backups/${backupsViewModel.currentBackup!!}/flash/ak3") {
-                                        popUpTo("slot{slotSuffix}")
+                                        popUpTo("slot$slotSuffix")
                                     }
                                 }
                             ) {
@@ -167,7 +167,7 @@ fun ColumnScope.SlotBackupsContent(
                 )
             }
         }
-    } else if (navController.currentDestination!!.route!! == "slot{slotSuffix}/backups/{backupId}/restore") {
+    } else if (navController.currentDestination!!.route!!.endsWith("/backups/{backupId}/restore")) {
         DataCard (stringResource(R.string.restore))
         Spacer(Modifier.height(5.dp))
         val disabledColor = ButtonDefaults.buttonColors(
@@ -216,7 +216,7 @@ fun ColumnScope.SlotBackupsContent(
             onClick = {
                 backupsViewModel.restore(context, slotSuffix)
                 navController.navigate("slot$slotSuffix/backups/${backupsViewModel.currentBackup!!}/restore/restore") {
-                    popUpTo("slot{slotSuffix}")
+                    popUpTo("slot$slotSuffix")
                 }
             },
             enabled = currentBackup.hashes == null || (PartitionUtil.PartitionNames.none { currentBackup.hashes.get(it) != null && backupsViewModel.backupPartitions[it] == null } && backupsViewModel.backupPartitions.filter { it.value }.isNotEmpty())
