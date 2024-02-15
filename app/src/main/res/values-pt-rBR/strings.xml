@@ -53,10 +53,10 @@
     <string name="reboot_edl">Reiniciar em modo EDL</string>
     <string name="save_ak3_log">Salvar registro do AK3</string>
     <string name="save_flash_log">Salvar registro do flash</string>
-    <string name="save_backup_log">Salvar registro de backup</string>
-    <string name="save_restore_log">Salvar registro de restauração</string>
+    <string name="save_backup_log">Salvar registro do backup</string>
+    <string name="save_restore_log">Salvar registro da restauração</string>
     <string name="save_ak3_zip_as_backup">Salvar AK3 ZIP como backup</string>
     <string name="backup_type">Tipo de backup</string>
     <string name="hashes">Hashes</string>
-    <string name="partition_selection_unavailable">Seleção de partição indisponível para backups legados</string>
+    <string name="partition_selection_unavailable">Seleção de partição indisponível para backups antigos</string>
 </resources>
