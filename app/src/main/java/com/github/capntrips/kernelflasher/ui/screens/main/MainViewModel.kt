@@ -71,13 +71,7 @@ class MainViewModel(
             val initBootA = PartitionUtil.findPartitionBlockDevice(context, "init_boot", "_a")
             val initBootB = PartitionUtil.findPartitionBlockDevice(context, "init_boot", "_b")
             slotA = SlotViewModel(context, fileSystemManager, navController, _isRefreshing, slotSuffix == "_a", "_a", bootA, initBootA, _backups)
-            if (slotA.hasError && slotSuffix == "_a") {
-                _error = slotA.error
-            }
             slotB = SlotViewModel(context, fileSystemManager, navController, _isRefreshing, slotSuffix == "_b", "_b", bootB, initBootB, _backups)
-            if (slotB.hasError && slotSuffix == "_b") {
-                _error = slotB.error
-            }
         } else {
             val boot = PartitionUtil.findPartitionBlockDevice(context, "boot", "")!!
             val initBoot = PartitionUtil.findPartitionBlockDevice(context, "init_boot", "")

@@ -66,8 +66,8 @@ class SlotViewModel(
     private var inInit = true
     private var _error: String? = null
 
-    val sha1: String
-        get() = _sha1!!
+    val sha1: String?
+        get() = _sha1
     val flashOutput: List<String>
         get() = _flashOutput
     val uiPrintedOutput: List<String>
@@ -120,12 +120,12 @@ class SlotViewModel(
             when (Shell.cmd("$magiskboot cpio ramdisk.cpio test").exec().code) {
                 0 -> _sha1 = Shell.cmd("$magiskboot sha1 $boot").exec().out.firstOrNull()
                 1 -> _sha1 = Shell.cmd("$magiskboot cpio ramdisk.cpio sha1").exec().out.firstOrNull()
-                else -> log(context, "Invalid ramdisk in boot.img", shouldThrow = true)
+                else -> _error = "Invalid ramdisk in boot.img"
             }
         } else if (kernel.exists()) {
             _sha1 = Shell.cmd("$magiskboot sha1 $boot").exec().out.firstOrNull()
         } else {
-            log(context, "Invalid boot.img, no ramdisk or kernel found", shouldThrow = true)
+            _error = "Invalid boot.img, no ramdisk or kernel found"
         }
         Shell.cmd("$magiskboot cleanup").exec()
 

@@ -8,7 +8,7 @@
     <string name="kernel_name" tools:keep="@string/kernel_name">Kernel Name</string>
     <string name="kernel_version">Kernel Version</string>
     <string name="slot_suffix">Slot Suffix</string>
-    <string name="slot">Slot</string>
+    <string name="slot" tools:ignore="MissingTranslation">Slot</string>
     <string name="slot_a">Slot A</string>
     <string name="slot_b">Slot B</string>
     <string name="boot_sha1" tools:ignore="Typos">Boot SHA1</string>
