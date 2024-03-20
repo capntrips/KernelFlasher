@@ -18,10 +18,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
 import com.github.capntrips.kernelflasher.MainActivity
+import kotlinx.serialization.ExperimentalSerializationApi
 
 @ExperimentalAnimationApi
 @ExperimentalMaterialApi
 @ExperimentalMaterial3Api
+@ExperimentalSerializationApi
 @ExperimentalUnitApi
 @Composable
 fun FlashButton(

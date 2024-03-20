@@ -25,8 +25,10 @@ import com.github.capntrips.kernelflasher.common.types.room.updates.DateSerializ
 import com.github.capntrips.kernelflasher.ui.components.DataCard
 import com.github.capntrips.kernelflasher.ui.components.DataRow
 import com.github.capntrips.kernelflasher.ui.components.ViewButton
+import kotlinx.serialization.ExperimentalSerializationApi
 
 @ExperimentalMaterial3Api
+@ExperimentalSerializationApi
 @Composable
 fun ColumnScope.UpdatesContent(
     viewModel: UpdatesViewModel,

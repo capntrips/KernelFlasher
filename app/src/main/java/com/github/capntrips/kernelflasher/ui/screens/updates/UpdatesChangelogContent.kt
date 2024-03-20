@@ -15,9 +15,11 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.github.capntrips.kernelflasher.ui.components.DataCard
+import kotlinx.serialization.ExperimentalSerializationApi
 
 @Suppress("UnusedReceiverParameter")
 @ExperimentalMaterial3Api
+@ExperimentalSerializationApi
 @ExperimentalUnitApi
 @Composable
 fun ColumnScope.UpdatesChangelogContent(

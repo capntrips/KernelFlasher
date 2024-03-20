@@ -16,7 +16,7 @@ libsu = "5.2.1"
 material = "1.11.0"
 okhttp = "4.11.0"
 
-android-application = "8.2.0"
+android-application = "8.3.1"
 devtools-ksp = "1.9.21-1.0.16"
 
 [libraries]
