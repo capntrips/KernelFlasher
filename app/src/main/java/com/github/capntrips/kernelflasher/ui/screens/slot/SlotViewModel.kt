@@ -2,6 +2,7 @@ package com.github.capntrips.kernelflasher.ui.screens.slot
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Resources
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
@@ -15,6 +16,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.github.capntrips.kernelflasher.R
 import com.github.capntrips.kernelflasher.common.PartitionUtil
 import com.github.capntrips.kernelflasher.common.extensions.ByteArray.toHex
 import com.github.capntrips.kernelflasher.common.extensions.ExtendedFile.inputStream
@@ -65,6 +67,7 @@ class SlotViewModel(
     private val hashAlgorithm: String = "SHA-256"
     private var inInit = true
     private var _error: String? = null
+    private val resources: Resources = context.resources
 
     val sha1: String
         get() = _sha1!!
@@ -120,12 +123,12 @@ class SlotViewModel(
             when (Shell.cmd("$magiskboot cpio ramdisk.cpio test").exec().code) {
                 0 -> _sha1 = Shell.cmd("$magiskboot sha1 $boot").exec().out.firstOrNull()
                 1 -> _sha1 = Shell.cmd("$magiskboot cpio ramdisk.cpio sha1").exec().out.firstOrNull()
-                else -> log(context, "Invalid ramdisk in boot.img", shouldThrow = true)
+                else -> log(context, resources.getString(R.string.invalid_ramdisk), shouldThrow = true)
             }
         } else if (kernel.exists()) {
             _sha1 = Shell.cmd("$magiskboot sha1 $boot").exec().out.firstOrNull()
         } else {
-            log(context, "Invalid boot.img, no ramdisk or kernel found", shouldThrow = true)
+            log(context, resources.getString(R.string.invalid_boot), shouldThrow = true)
         }
         Shell.cmd("$magiskboot cleanup").exec()
 
@@ -218,11 +221,11 @@ class SlotViewModel(
         launch {
             val now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd--HH-mm"))
             val logName = if (navController.currentDestination!!.route!!.contains("ak3")) {
-                "ak3"
+                resources.getString(R.string.log_ak3)
             } else if (navController.currentDestination!!.route!!.endsWith("/backup")) {
-                "backup"
+                resources.getString(R.string.log_backup)
             } else {
-                "flash"
+                resources.getString(R.string.log_flash)
             }
             val log = File("/sdcard/Download/$logName-log--$now.log")
             if (navController.currentDestination!!.route!!.contains("ak3")) {
@@ -231,9 +234,9 @@ class SlotViewModel(
                 log.writeText(flashOutput.joinToString("\n"))
             }
             if (log.exists()) {
-                log(context, "Saved $logName log to $log")
+                log(context, resources.getString(R.string.save_log_success, logName, log))
             } else {
-                log(context, "Failed to save $log", shouldThrow = true)
+                log(context, resources.getString(R.string.save_log_fail, log), shouldThrow = true)
             }
         }
     }
@@ -353,21 +356,21 @@ class SlotViewModel(
         val externalDir = fileSystemManager.getFile("/sdcard/KernelFlasher")
         if (!externalDir.exists()) {
             if (!externalDir.mkdir()) {
-                log(context, "Failed to create KernelFlasher dir on /sdcard", shouldThrow = true)
+                log(context, resources.getString(R.string.create_kf_dir_fail), shouldThrow = true)
             }
         }
         val backupsDir = externalDir.getChildFile("backups")
         if (!backupsDir.exists()) {
             if (!backupsDir.mkdir()) {
-                log(context, "Failed to create backups dir", shouldThrow = true)
+                log(context, resources.getString(R.string.create_backups_dir_fail), shouldThrow = true)
             }
         }
         val backupDir = backupsDir.getChildFile(now)
         if (backupDir.exists()) {
-            log(context, "Backup $now already exists", shouldThrow = true)
+            log(context, resources.getString(R.string.backup_exists, now), shouldThrow = true)
         } else {
             if (!backupDir.mkdir()) {
-                log(context, "Failed to create backup dir", shouldThrow = true)
+                log(context, resources.getString(R.string.create_backup_dir_fail), shouldThrow = true)
             }
         }
         return backupDir
@@ -389,7 +392,7 @@ class SlotViewModel(
             addMessage("Saving backup $now")
             val hashes = backupPartitions(context, backupDir)
             if (hashes == null) {
-                log(context, "No partitions saved", shouldThrow = true)
+                log(context, resources.getString(R.string.no_partitions_saved), shouldThrow = true)
             }
             val jsonFile = backupDir.getChildFile("backup.json")
             val backup = Backup(now, "raw", currentKernelVersion!!, sha1, null, hashes, hashAlgorithm)
@@ -423,7 +426,7 @@ class SlotViewModel(
                     callback.invoke()
                 }
             } else {
-                log(context, "AK3 zip is missing", shouldThrow = true)
+                log(context, resources.getString(R.string.ak3_zip_missing), shouldThrow = true)
             }
         }
     }
@@ -443,7 +446,7 @@ class SlotViewModel(
                 val zipFile = ZipFile(zip)
                 zipFile.use { z ->
                     if (z.getEntry("anykernel.sh") == null) {
-                        log(context, "Invalid AK3 zip", shouldThrow = true)
+                        log(context, resources.getString(R.string.ak3_zip_invalid), shouldThrow = true)
                     }
                     withContext (Dispatchers.Main) {
                         callback?.invoke()
@@ -454,7 +457,7 @@ class SlotViewModel(
                 throw e
             }
         } else {
-            log(context, "Failed to save zip", shouldThrow = true)
+            log(context, resources.getString(R.string.save_zip_fail), shouldThrow = true)
         }
     }
 
@@ -467,7 +470,7 @@ class SlotViewModel(
         val backupsDir = fileSystemManager.getFile("$externalDir/backups")
         val backupDir = backupsDir.getChildFile(currentBackup)
         if (!backupDir.exists()) {
-            log(context, "Backup $currentBackup does not exists", shouldThrow = true)
+            log(context, resources.getString(R.string.backup_not_exist, currentBackup), shouldThrow = true)
         }
         val source = backupDir.getChildFile(flashFilename!!)
         val zip = File(context.filesDir, flashFilename!!)
@@ -509,14 +512,14 @@ class SlotViewModel(
                 val flashScript = File(files, "flash_ak3.sh")
                 val result = Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER or Shell.FLAG_REDIRECT_STDERR).build().newJob().add("F=$files Z=\"$zip\" /system/bin/sh $flashScript").to(flashOutput).exec()
                 if (result.isSuccess) {
-                    log(context, "Kernel flashed successfully")
+                    log(context, resources.getString(R.string.flash_success))
                     _wasFlashSuccess.value = true
                 } else {
-                    log(context, "Failed to flash zip", shouldThrow = false)
+                    log(context, resources.getString(R.string.flash_fail), shouldThrow = false)
                 }
                 clearTmp(context)
             } else {
-                log(context, "AK3 zip is missing", shouldThrow = true)
+                log(context, resources.getString(R.string.ak3_zip_missing), shouldThrow = true)
             }
         } catch (e: Exception) {
             clearFlash(context)
@@ -569,7 +572,7 @@ class SlotViewModel(
                             PartitionUtil.flashBlockDevice(image, blockDevice, hashAlgorithm)
                         }
                     } else {
-                        log(context, "Partition $partitionName was not found", shouldThrow = true)
+                        log(context, resources.getString(R.string.partition_not_found, partitionName), shouldThrow = true)
                     }
                     addMessage("Flashed $flashFilename to $partitionName")
                     addMessage("Cleaning up ...")
@@ -577,7 +580,7 @@ class SlotViewModel(
                     addMessage("Done.")
                     _wasFlashSuccess.value = true
                 } else {
-                    log(context, "Partition image is missing", shouldThrow = true)
+                    log(context, resources.getString(R.string.partition_image_missing), shouldThrow = true)
                 }
             } catch (e: Exception) {
                 clearFlash(context)
