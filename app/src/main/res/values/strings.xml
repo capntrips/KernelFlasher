@@ -59,5 +59,31 @@
     <string name="backup_type">Backup Type</string>
     <string name="hashes">Hashes</string>
     <string name="partition_selection_unavailable">Partition selection unavailable for legacy backups</string>
+    <string name="flash_success">Kernel flashed successfully</string>
+    <string name="flash_fail">Failed to flash zip</string>
+    <string name="invalid_ramdisk">Invalid ramdisk in boot.img</string>
+    <string name="invalid_boot">Invalid boot.img, no ramdisk or kernel found</string>
+    <string name="save_log_success">Saved %1$s log to %2$s</string>
+    <string name="save_log_fail">Failed to save %1$s log</string>
+    <string name="log_ak3">AK3</string>
+    <string name="log_backup">backup</string>
+    <string name="log_flash">flash</string>
+    <string name="create_kf_dir_fail">Failed to create KernelFlasher dir on /sdcard</string>
+    <string name="create_backups_dir_fail">Failed to create backups dir</string>
+    <string name="create_backup_dir_fail">Failed to create backup dir</string>
+    <string name="backup_exists">Backup %1$s already exists</string>
+    <string name="no_partitions_saved">No partitions saved</string>
+    <string name="ak3_zip_missing">AK3 zip is missing</string>
+    <string name="ak3_zip_invalid">Invalid AK3 zip</string>
+    <string name="save_zip_fail">Failed to save zip</string>
+    <string name="backup_not_exist">Backup %1$s does not exists</string>
+    <string name="partition_not_found">Partition %1$s was not found</string>
+    <string name="partition_image_missing">Partition image is missing</string>
+    <string name="save_ramoops_success">Saved ramoops to %1$s</string>
+    <string name="save_ramoops_fail">Failed to save %1$s</string>
+    <string name="save_dmesg_success">Saved dmesg to %1$s</string>
+    <string name="save_dmesg_fail">Failed to save %1$s</string>
+    <string name="save_logcat_success">Saved logcat to %1$s</string>
+    <string name="save_logcat_fail">Failed to save %1$s</string>
     <!-- TODO: Make error and success messages string resources -->
 </resources>

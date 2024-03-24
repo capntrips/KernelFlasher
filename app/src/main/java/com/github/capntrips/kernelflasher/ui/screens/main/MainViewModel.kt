@@ -2,6 +2,7 @@ package com.github.capntrips.kernelflasher.ui.screens.main
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Resources
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.MutableState
@@ -9,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.github.capntrips.kernelflasher.R
 import com.github.capntrips.kernelflasher.common.PartitionUtil
 import com.github.capntrips.kernelflasher.common.types.backups.Backup
 import com.github.capntrips.kernelflasher.ui.screens.backups.BackupsViewModel
@@ -48,6 +50,7 @@ class MainViewModel(
     private val _isRefreshing: MutableState<Boolean> = mutableStateOf(true)
     private var _error: String? = null
     private var _backups: MutableMap<String, Backup> = mutableMapOf()
+    private val resources: Resources = context.resources
 
     val isRefreshing: Boolean
         get() = _isRefreshing.value
@@ -142,9 +145,9 @@ class MainViewModel(
             val ramoops = File("/sdcard/Download/console-ramoops--$now.log")
             Shell.cmd("cp /sys/fs/pstore/console-ramoops-0 $ramoops").exec()
             if (ramoops.exists()) {
-                log(context, "Saved ramoops to $ramoops")
+                log(context, resources.getString(R.string.save_ramoops_success, ramoops))
             } else {
-                log(context, "Failed to save $ramoops", shouldThrow = true)
+                log(context,resources.getString(R.string.save_ramoops_fail, ramoops), shouldThrow = true)
             }
         }
     }
@@ -156,9 +159,9 @@ class MainViewModel(
             val dmesg = File("/sdcard/Download/dmesg--$now.log")
             Shell.cmd("dmesg > $dmesg").exec()
             if (dmesg.exists()) {
-                log(context, "Saved dmesg to $dmesg")
+                log(context, resources.getString(R.string.save_dmesg_success, dmesg))
             } else {
-                log(context, "Failed to save $dmesg", shouldThrow = true)
+                log(context,resources.getString(R.string.save_dmesg_fail, dmesg), shouldThrow = true)
             }
         }
     }
@@ -170,9 +173,9 @@ class MainViewModel(
             val logcat = File("/sdcard/Download/logcat--$now.log")
             Shell.cmd("logcat -d > $logcat").exec()
             if (logcat.exists()) {
-                log(context, "Saved logcat to $logcat")
+                log(context, resources.getString(R.string.save_logcat_success, logcat))
             } else {
-                log(context, "Failed to save $logcat", shouldThrow = true)
+                log(context,resources.getString(R.string.save_logcat_fail, logcat), shouldThrow = true)
             }
         }
     }
