@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+  <string name="app_name">Kernel Flasher</string>
+  <string name="root_required">Root 権限が必要です</string>
+  <string name="root_service_disconnected">Root サービスが切断されました</string>
+  <string name="device">デバイス</string>
+  <string name="model">モデル</string>
+  <string name="build_number">ビルド番号</string>
+  <string name="kernel_name" tools:keep="@string/kernel_name">カーネル名</string>
+  <string name="kernel_version">カーネルバージョン</string>
+  <string name="slot_suffix">スロットの接頭辞</string>
+  <string name="slot">スロット</string>
+  <string name="slot_a">スロット A</string>
+  <string name="slot_b">スロット B</string>
+  <string name="boot_sha1" tools:ignore="Typos">Boot SHA1</string>
+  <string name="vendor_dlkm">Vendor DLKM</string>
+  <string name="exists">あり</string>
+  <string name="not_found">なし</string>
+  <string name="mounted">マウント済み</string>
+  <string name="unmounted">アンマウント済み</string>
+  <string name="view">表示</string>
+  <string name="backups">バックアップ</string>
+  <string name="save_ramoops">ramoops を保存</string>
+  <string name="save_dmesg">dmesg を保存</string>
+  <string name="save_logcat">logcat を保存</string>
+  <string name="back">戻る</string>
+  <string name="backup">バックアップ</string>
+  <string name="updates">更新</string>
+  <string name="flash">フラッシュ</string>
+  <string name="flash_ak3_zip">AK3 Zip をフラッシュ</string>
+  <string name="flash_partition_image">パーティションイメージをフラッシュ</string>
+  <string name="restore">復元</string>
+  <string name="check_kernel_version">カーネルバージョンを確認</string>
+  <string name="mount_vendor_dlkm">Vendor DLKM をマウント</string>
+  <string name="unmount_vendor_dlkm">Vendor DLKM をアンマウント</string>
+  <string name="map_vendor_dlkm">Vendor DLKM をマップ</string>
+  <string name="unmap_vendor_dlkm">Vendor DLKM をアンマップ</string>
+  <string name="migrate">移行</string>
+  <string name="no_backups_found">バックアップが見つかりません</string>
+  <string name="delete">削除</string>
+  <string name="add">追加</string>
+  <string name="url">URL</string>
+  <string name="version">バージョン</string>
+  <string name="date_released">リリース日</string>
+  <string name="last_updated">最終更新</string>
+  <string name="changelog">更新履歴</string>
+  <string name="check_for_updates">更新を確認</string>
+  <string name="download">ダウンロード</string>
+  <string name="reboot">再起動</string>
+  <string name="reboot_userspace">ソフトリブート</string>
+  <string name="reboot_recovery">リカバリーで再起動</string>
+  <string name="reboot_bootloader">ブートローダーで再起動</string>
+  <string name="reboot_download">ダウンロードモードで再起動</string>
+  <string name="reboot_edl">EDL で再起動</string>
+  <string name="save_ak3_log">AK3 ログを保存</string>
+  <string name="save_flash_log">フラッシュログを保存</string>
+  <string name="save_backup_log">バックアップログを保存</string>
+  <string name="save_restore_log" tools:keep="@string/save_restore_log">復元ログを保存</string>
+  <string name="save_ak3_zip_as_backup">AK3 Zip をバックアップとして保存</string>
+  <string name="backup_type">バックアップタイプ</string>
+  <string name="hashes">ハッシュ</string>
+  <string name="partition_selection_unavailable">レガシーバックアップではパーティションを選択できません</string>
+  <!-- TODO: Make error and success messages string resources -->
+</resources>
