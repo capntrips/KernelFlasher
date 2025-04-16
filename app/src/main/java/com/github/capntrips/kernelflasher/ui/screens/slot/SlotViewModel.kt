@@ -63,7 +63,6 @@ class SlotViewModel(
     private var flashUri: Uri? = null
     private var flashFilename: String? = null
     private val hashAlgorithm: String = "SHA-256"
-    private var inInit = true
     private var _error: String? = null
 
     val sha1: String?
@@ -80,17 +79,15 @@ class SlotViewModel(
         get() = _isRefreshing.value
     val hasError: Boolean
         get() = _error != null
-    val error: String
-        get() = _error!!
+    val error: String?
+        get() = _error
 
     init {
         refresh(context)
     }
 
     fun refresh(context: Context) {
-        if (!isActive) {
-            inInit = true
-        }
+        _error = null
 
         val magiskboot = File(context.filesDir, "magiskboot")
         Shell.cmd("$magiskboot unpack $boot").exec()
@@ -134,7 +131,6 @@ class SlotViewModel(
         }
 
         kernelVersion = null
-        inInit = false
     }
 
     // TODO: use base class for common functions
@@ -164,11 +160,7 @@ class SlotViewModel(
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             }
         } else {
-            if (inInit) {
-                _error = message
-            } else {
-                throw Exception(message)
-            }
+            throw Exception(message)
         }
     }
 

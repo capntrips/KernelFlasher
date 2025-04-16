@@ -1,24 +1,25 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.androidx.room)
+    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.github.capntrips.kernelflasher"
         minSdk 29
-        targetSdk 34
+        targetSdk 35
         versionCode 20
         versionName "1.0.0-alpha20"
 
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments += [
-                    "room.schemaLocation": "$projectDir/schemas".toString(),
                     "room.incremental": "true"
                 ]
             }
@@ -54,9 +55,6 @@ android {
     buildFeatures {
         compose true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion libs.versions.compose.compiler.get()
-    }
     packagingOptions {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
@@ -66,6 +64,10 @@ android {
         }
     }
     namespace 'com.github.capntrips.kernelflasher'
+}
+
+room {
+    schemaDirectory "$projectDir/schemas".toString()
 }
 
 dependencies {

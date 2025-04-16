@@ -59,5 +59,6 @@
     <string name="backup_type">Backup Type</string>
     <string name="hashes">Hashes</string>
     <string name="partition_selection_unavailable">Partition selection unavailable for legacy backups</string>
+    <string name="saved_restore_log">Saved restore log to %1$s</string>
     <!-- TODO: Make error and success messages string resources -->
 </resources>

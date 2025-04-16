@@ -1,0 +1,81 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "bbe3033de836fa33fb2ed46b5272124e",
+    "entities": [
+      {
+        "tableName": "Update",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER, `update_uri` TEXT, `kernel_name` TEXT NOT NULL, `kernel_version` TEXT NOT NULL, `kernel_link` TEXT NOT NULL, `kernel_changelog_url` TEXT NOT NULL, `kernel_date` INTEGER NOT NULL, `kernel_sha1` TEXT NOT NULL, `support_link` TEXT, `last_updated` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "updateUri",
+            "columnName": "update_uri",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "kernelName",
+            "columnName": "kernel_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kernelVersion",
+            "columnName": "kernel_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kernelLink",
+            "columnName": "kernel_link",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kernelChangelogUrl",
+            "columnName": "kernel_changelog_url",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kernelDate",
+            "columnName": "kernel_date",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kernelSha1",
+            "columnName": "kernel_sha1",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "supportLink",
+            "columnName": "support_link",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "last_updated",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bbe3033de836fa33fb2ed46b5272124e')"
+    ]
+  }
+}

@@ -36,7 +36,7 @@ fun SlotCard(
         }
     ) {
         val cardWidth = remember { mutableIntStateOf(0) }
-        if (viewModel.sha1 != null) {
+        if (!viewModel.sha1.isNullOrEmpty()) {
             DataRow(
                 label = stringResource(R.string.boot_sha1),
                 value = viewModel.sha1!!.substring(0, 8),
@@ -66,10 +66,10 @@ fun SlotCard(
             }
             DataRow(stringResource(R.string.vendor_dlkm), vendorDlkmValue, mutableMaxWidth = cardWidth)
         }
-        if (viewModel.hasError) {
+        AnimatedVisibility(!viewModel.isRefreshing && viewModel.hasError) {
             Row {
                 DataValue(
-                    value = viewModel.error,
+                    value = viewModel.error ?: "",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.titleSmall,
                     clickable = true

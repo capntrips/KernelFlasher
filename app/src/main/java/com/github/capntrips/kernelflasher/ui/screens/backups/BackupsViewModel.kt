@@ -13,6 +13,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.github.capntrips.kernelflasher.R
 import com.github.capntrips.kernelflasher.common.PartitionUtil
 import com.github.capntrips.kernelflasher.common.extensions.ExtendedFile.outputStream
 import com.github.capntrips.kernelflasher.common.extensions.ExtendedFile.readText
@@ -82,7 +83,6 @@ class BackupsViewModel(
     fun refresh(context: Context) {
         val oldDir = context.getExternalFilesDir(null)
         val oldBackupsDir = File(oldDir, "backups")
-        @Deprecated("Backup migration will be removed in the first stable release")
         _needsMigration.value = oldBackupsDir.exists() && oldBackupsDir.listFiles()?.size!! > 0
         @SuppressLint("SdCardPath")
         val externalDir = File("/sdcard/KernelFlasher")
@@ -162,7 +162,7 @@ class BackupsViewModel(
             val log = File("/sdcard/Download/restore-log--$now.log")
             log.writeText(restoreOutput.joinToString("\n"))
             if (log.exists()) {
-                log(context, "Saved restore log to $log")
+                log(context, context.getString(R.string.saved_restore_log, log))
             } else {
                 log(context, "Failed to save $log", shouldThrow = true)
             }

@@ -44,15 +44,17 @@ fun ColumnScope.BackupsContent(
             DataRow(stringResource(R.string.backup_type), currentBackup.type, mutableMaxWidth = cardWidth)
             DataRow(stringResource(R.string.kernel_version), currentBackup.kernelVersion, mutableMaxWidth = cardWidth, clickable = true)
             if (currentBackup.type == "raw") {
-                DataRow(
-                    label = stringResource(R.string.boot_sha1),
-                    value = currentBackup.bootSha1!!.substring(0, 8),
-                    valueStyle = MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    mutableMaxWidth = cardWidth
-                )
+                if (!currentBackup.bootSha1.isNullOrEmpty()) {
+                    DataRow(
+                        label = stringResource(R.string.boot_sha1),
+                        value = currentBackup.bootSha1.substring(0, 8),
+                        valueStyle = MaterialTheme.typography.titleSmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        mutableMaxWidth = cardWidth
+                    )
+                }
                 if (currentBackup.hashes != null) {
                     val hashWidth = remember { mutableIntStateOf(0) }
                     DataSet(stringResource(R.string.hashes)) {
@@ -119,10 +121,10 @@ fun ColumnScope.BackupsContent(
                     }
                 ) {
                     val cardWidth = remember { mutableIntStateOf(0) }
-                    if (currentBackup.type == "raw") {
+                    if (currentBackup.type == "raw" && !currentBackup.bootSha1.isNullOrEmpty()) {
                         DataRow(
                             label = stringResource(R.string.boot_sha1),
-                            value = currentBackup.bootSha1!!.substring(0, 8),
+                            value = currentBackup.bootSha1.substring(0, 8),
                             valueStyle = MaterialTheme.typography.titleSmall.copy(
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Medium
